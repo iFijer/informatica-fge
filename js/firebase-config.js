@@ -17,12 +17,13 @@
 
 (function () {
     const DEFAULT_FIREBASE_CONFIG = {
-        apiKey: "",
-        authDomain: "",
-        projectId: "",
-        storageBucket: "",
-        messagingSenderId: "",
-        appId: ""
+        apiKey: "AIzaSyCszAwRfMJ2C2eDPI_8jUjnVUbn7Vdbhls",
+        authDomain: "informaticafge-56768.firebaseapp.com",
+        projectId: "informaticafge-56768",
+        storageBucket: "informaticafge-56768.firebasestorage.app",
+        messagingSenderId: "282467050654",
+        appId: "1:282467050654:web:5b34fd9677efe62fb5478f",
+        measurementId: "G-W68T7M688D"
     };
 
     const OVERRIDE_KEY = 'fge_firebase_config_override_v1';
