@@ -30,7 +30,7 @@ Para que múltiples peritos sincronicen datos entre distintas computadoras, trab
    - Activa el proveedor **Correo electrónico/contraseña** (`Email/Password`).
    - En la pestaña **Templates (Plantillas)** elige idioma **Español** para que el correo de *"Restablecimiento de contraseña"* llegue en español con el nombre del sistema.
 3. En la pestaña **Users (Usuarios)** de Authentication, haz clic en **Agregar usuario** para dar de alta tu cuenta administradora inicial:
-   - **Correo:** `infofge-4724@fge-morelos.mx` *(o tu correo institucional; si usas otro, actualiza `ADMIN_DEFAULT_EMAIL` en `js/firebase-config.js`)*.
+   - **Correo:** `isai.fijer@gmail.com` *(ya configurado como `ADMIN_DEFAULT_EMAIL` en `js/firebase-config.js`)*.
    - **Contraseña:** *(mínimo 6 caracteres; Firebase exige al menos 6 caracteres por seguridad, por ejemplo `4724fge` o la clave segura que elijas)*.
 4. Ve a **Compilación → Firestore Database → Crear base de datos** (en modo producción).
    - Abre la pestaña **Reglas (Rules)**, copia todo el contenido del archivo **`firestore.rules`** de esta carpeta y haz clic en **Publicar**.

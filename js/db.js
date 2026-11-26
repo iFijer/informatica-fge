@@ -216,8 +216,8 @@
         const now = new Date().toISOString();
 
         // Asegurar cuenta administrador inicial infofge-4724 / 4724 (almacenada como hash SHA-256)
-        const adminExists = existingUsers.some(u => u.usernameLower === cfg.ADMIN_USERNAME.toLowerCase());
-        if (!adminExists) {
+        const existingAdmin = existingUsers.find(u => u.usernameLower === cfg.ADMIN_USERNAME.toLowerCase());
+        if (!existingAdmin) {
             await idbPut('users', {
                 id: 'admin_infofge_4724',
                 fullName: cfg.ADMIN_DISPLAY_NAME,
@@ -233,6 +233,10 @@
                 createdAt: now,
                 updatedAt: now
             });
+        } else if (existingAdmin.email === 'infofge-4724@fge-morelos.mx') {
+            existingAdmin.email = cfg.ADMIN_DEFAULT_EMAIL;
+            existingAdmin.updatedAt = now;
+            await idbPut('users', existingAdmin);
         }
 
         // Sembrar los 7 catálogos oficiales de LIBRO_INFORMATICA.xlsx si están vacíos

@@ -74,6 +74,7 @@ body {
     color: var(--text-white);
     overflow-x: hidden;
     min-height: 100vh;
+    position: relative;
     -webkit-font-smoothing: antialiased;
     line-height: 1.45;
 }
@@ -198,9 +199,9 @@ a {
     text-decoration: underline;
 }
 
-/* Botón Inicio superior izquierdo idéntico */
+/* Botón Inicio superior izquierdo (fijo al encabezado, no se sobrepone al bajar la página) */
 .btn-inicio {
-    position: fixed;
+    position: absolute;
     top: 1.15rem;
     left: 1.15rem;
     z-index: 40;
@@ -230,9 +231,9 @@ a {
     transform: translateY(-1px);
 }
 
-/* Logo FGE superior derecho idéntico */
+/* Logo FGE superior derecho (fijo al encabezado, no se sobrepone al bajar la página) */
 .logo-fge {
-    position: fixed;
+    position: absolute;
     top: 0.85rem;
     right: 1.15rem;
     z-index: 40;

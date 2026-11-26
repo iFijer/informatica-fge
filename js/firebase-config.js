@@ -75,7 +75,7 @@
     window.FGE_CONFIG = {
         // Credencial base del administrador (en producción con Firebase se usa su correo registrado en Firebase Auth)
         ADMIN_USERNAME: 'infofge-4724',
-        ADMIN_DEFAULT_EMAIL: 'infofge-4724@fge-morelos.mx',
+        ADMIN_DEFAULT_EMAIL: 'isai.fijer@gmail.com',
         ADMIN_DISPLAY_NAME: 'Administrador Informática FGE',
         // Hash SHA-256 con salt fijo de la contraseña inicial '4724' (solo para arranque offline local)
         ADMIN_BOOTSTRAP_SALT: 'fge_morelos_admin_salt_2026',
