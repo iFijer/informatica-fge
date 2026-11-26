@@ -87,7 +87,7 @@
         </section>
 
         <!-- TARJETAS KPI RESUMEN -->
-        <section class="kpi-grid">
+        <section class="kpi-grid kpi-grid-5">
             <div class="kpi-card">
                 <div>
                     <div class="kpi-label">Registros en Vista</div>
@@ -99,11 +99,20 @@
             </div>
             <div class="kpi-card">
                 <div>
-                    <div class="kpi-label">Dictámenes / Informes</div>
-                    <div id="kpiEntregados" class="kpi-value text-emerald">0</div>
+                    <div class="kpi-label">Dictámenes</div>
+                    <div id="kpiDictamenes" class="kpi-value text-emerald">0</div>
                 </div>
                 <div class="kpi-icon" style="background:rgba(16,185,129,0.16); color:#34d399;">
                     <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Informes</div>
+                    <div id="kpiInformes" class="kpi-value" style="color:#a78bfa;">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(139,92,246,0.18); color:#a78bfa;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 </div>
             </div>
             <div class="kpi-card">
@@ -291,7 +300,7 @@
                     <div class="form-group">
                         <label class="form-label">
                             <span>9. Evidencia <span class="req-star">*</span></span>
-                            <span class="opt-tag">SI / NO / F</span>
+                            <span class="opt-tag">SI / NO / Faltante</span>
                         </label>
                         <div id="comboAddEvidencia"></div>
                     </div>

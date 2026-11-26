@@ -385,6 +385,23 @@
                     }
                 });
 
+                const evSnap = await fbDb.collection('catalog_items').where('category', '==', 'evidencias').get();
+                const evItems = evSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const hasFaltante = evItems.some(i => normalizeForCompare(i.value) === 'FALTANTE');
+                for (const ev of evItems) {
+                    if (normalizeForCompare(ev.value) === 'F') {
+                        if (hasFaltante) {
+                            batch.delete(fbDb.collection('catalog_items').doc(ev.id));
+                        } else {
+                            batch.update(fbDb.collection('catalog_items').doc(ev.id), {
+                                value: 'FALTANTE',
+                                valueNormalized: 'FALTANTE'
+                            });
+                        }
+                        ops++;
+                    }
+                }
+
                 if (ops > 0) await batch.commit();
             } else {
                 const items = (await idbGetAll('catalog_items')).filter(i => i.category === 'ministerios_publicos');
@@ -404,6 +421,17 @@
                     } else {
                         seenClean.set(norm, it.id);
                         await idbPut('catalog_items', { ...it, value: clean, valueNormalized: norm });
+                    }
+                }
+                const evItems = (await idbGetAll('catalog_items')).filter(i => i.category === 'evidencias');
+                const hasFaltante = evItems.some(i => normalizeForCompare(i.value) === 'FALTANTE');
+                for (const ev of evItems) {
+                    if (normalizeForCompare(ev.value) === 'F') {
+                        if (hasFaltante) {
+                            await idbDelete('catalog_items', ev.id);
+                        } else {
+                            await idbPut('catalog_items', { ...ev, value: 'FALTANTE', valueNormalized: 'FALTANTE' });
+                        }
                     }
                 }
                 const recs = await idbGetAll('records');

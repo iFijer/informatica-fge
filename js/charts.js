@@ -15,7 +15,7 @@
         { key: 'fiscalia',          label: 'Peticiones por Fiscalía',             chartType: 'bar-horizontal', topN: 14 },
         { key: 'queSeEntrego',      label: 'Estatus / Qué se entregó',            chartType: 'doughnut',       topN: 10 },
         { key: 'pericialSolicita',  label: 'Pericial Solicitada (Evidencia)',     chartType: 'bar-horizontal', topN: 12 },
-        { key: 'evidencia',         label: 'Recepción de Evidencia (SI / NO / F)',chartType: 'pie',            topN: 8  },
+        { key: 'evidencia',         label: 'Recepción de Evidencia (SI / NO / Faltante)',chartType: 'pie',            topN: 8  },
         { key: 'perito',            label: 'Peticiones por Perito',               chartType: 'bar-vertical',   topN: 14 },
         { key: 'receptor',          label: 'Entregas por Receptor',               chartType: 'bar-vertical',   topN: 12 },
         { key: 'ministerioPublico', label: 'Top Ministerios Públicos',            chartType: 'bar-horizontal', topN: 10 },

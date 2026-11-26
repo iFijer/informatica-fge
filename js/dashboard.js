@@ -59,7 +59,7 @@
             { containerId: 'comboAddFiscalia',      inputId: 'addFiscalia',      cat: 'fiscalias',            ph: 'Selecciona o escribe fiscalía...' },
             { containerId: 'comboAddMP',            inputId: 'addMP',            cat: 'ministerios_publicos', ph: 'Selecciona o escribe MP...' },
             { containerId: 'comboAddPericial',      inputId: 'addPericial',      cat: 'pericial_solicita',    ph: 'Selecciona o escribe pericial...' },
-            { containerId: 'comboAddEvidencia',     inputId: 'addEvidencia',     cat: 'evidencias',           ph: 'SI, NO, F...' },
+            { containerId: 'comboAddEvidencia',     inputId: 'addEvidencia',     cat: 'evidencias',           ph: 'SI, NO, Faltante...' },
             { containerId: 'comboAddReceptor',      inputId: 'addReceptor',      cat: 'receptores',           ph: 'Selecciona o escribe receptor...' },
             { containerId: 'comboAddQueSeEntrego',  inputId: 'addQueSeEntrego',  cat: 'que_se_entrego',       ph: 'DICTAMEN, INFORME, PENDIENTE...' }
         ];
@@ -165,7 +165,8 @@
         const kpis = window.FGECharts.computeReportKPIs(list);
         const sinEvEntrega = list.filter(r => !r.fechaEntregaEvidenciasLocked || !r.custodioRecibeEvidenciaLocked).length;
         document.getElementById('kpiTotal').textContent = kpis.total;
-        document.getElementById('kpiEntregados').textContent = kpis.dictamenes + kpis.informes;
+        document.getElementById('kpiDictamenes').textContent = kpis.dictamenes;
+        document.getElementById('kpiInformes').textContent = kpis.informes;
         document.getElementById('kpiPendientes').textContent = kpis.pendientes;
         document.getElementById('kpiSinEvidenciaEntrega').textContent = sinEvEntrega;
         document.getElementById('tableCountInfo').textContent = `${list.length} registro${list.length === 1 ? '' : 's'} mostrado${list.length === 1 ? '' : 's'}`;
