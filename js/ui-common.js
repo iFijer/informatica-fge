@@ -402,7 +402,7 @@
         const v = normalizeText(val);
         if (v === 'SI' || v === 'S') return `<span class="badge badge-emerald">${escapeHtml(val)}</span>`;
         if (v === 'NO' || v === 'N') return `<span class="badge badge-slate">${escapeHtml(val)}</span>`;
-        if (v === 'F' || v === 'FALTA') return `<span class="badge badge-amber">${escapeHtml(val)}</span>`;
+        if (v === 'F' || v === 'FALTA' || v === 'FALTANTE') return `<span class="badge badge-amber">${escapeHtml(val)}</span>`;
         return `<span class="badge badge-cyan">${escapeHtml(val || '—')}</span>`;
     }
 

@@ -134,7 +134,7 @@
             if (evNorm === 'SI' || evNorm === 'S') {
                 row.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
                 row.getCell(9).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF065F46' } };
-            } else if (evNorm === 'F' || evNorm === 'FALTA') {
+            } else if (evNorm === 'F' || evNorm === 'FALTA' || evNorm === 'FALTANTE') {
                 row.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } };
                 row.getCell(9).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF92400E' } };
             }

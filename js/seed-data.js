@@ -85,7 +85,7 @@ window.FGE_SEED = {
     "evidencias": [
         "SI",
         "NO",
-        "F"
+        "FALTANTE"
     ],
     "receptores": [
         "DAMARIS",

@@ -816,6 +816,14 @@ select.form-control option {
     .kpi-grid {
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+    .kpi-grid.kpi-grid-5 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (min-width: 1120px) {
+    .kpi-grid.kpi-grid-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
 }
 
 .kpi-card {
