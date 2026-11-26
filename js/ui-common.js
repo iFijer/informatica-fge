@@ -212,7 +212,8 @@
         getItems,
         onManualAdd,
         initialValue = '',
-        disabled = false
+        disabled = false,
+        allowManualAdd = true
     }) {
         container.innerHTML = `
             <div class="combo-wrapper">
@@ -244,29 +245,38 @@
 
             const filtered = rawItems.filter(it => {
                 if (!queryNorm) return true;
-                return normalizeText(it.value).includes(queryNorm);
+                return normalizeText(it.searchText || it.displayLabel || it.value).includes(queryNorm);
             });
 
             const exactExists = queryNorm
-                ? rawItems.some(it => normalizeText(it.value) === queryNorm)
+                ? rawItems.some(it =>
+                    normalizeText(it.value) === queryNorm ||
+                    (it.displayLabel && normalizeText(it.displayLabel) === queryNorm)
+                )
                 : true;
 
             let html = '';
             if (filtered.length === 0 && !filterText.trim()) {
-                html += `<div class="combo-empty">Sin elementos en el catálogo. Escribe para agregar uno nuevo.</div>`;
+                html += `<div class="combo-empty">${allowManualAdd ? 'Sin elementos en el catálogo. Escribe para agregar uno nuevo.' : 'No hay elementos registrados.'}</div>`;
+            } else if (filtered.length === 0 && !allowManualAdd) {
+                html += `<div class="combo-empty">Sin coincidencias en los usuarios registrados.</div>`;
             } else {
                 filtered.forEach(item => {
                     const isPending = item.status === 'pending';
+                    const labelText = item.displayLabel || item.value;
                     html += `
                         <div class="combo-item" data-value="${escapeHtml(item.value)}">
-                            <span>${escapeHtml(item.value)}</span>
-                            ${isPending ? '<span class="badge badge-amber" style="font-size:0.65rem;">Pendiente</span>' : ''}
+                            <span>${escapeHtml(labelText)}</span>
+                            <span class="flex items-center gap-2">
+                                ${item.badgeText ? `<span class="badge badge-cyan" style="font-size:0.65rem;">${escapeHtml(item.badgeText)}</span>` : ''}
+                                ${isPending ? '<span class="badge badge-amber" style="font-size:0.65rem;">Pendiente</span>' : ''}
+                            </span>
                         </div>
                     `;
                 });
             }
 
-            if (filterText.trim().length > 0 && !exactExists && typeof onManualAdd === 'function') {
+            if (allowManualAdd && filterText.trim().length > 0 && !exactExists && typeof onManualAdd === 'function') {
                 const displayNew = filterText.trim().toUpperCase();
                 html += `
                     <div class="combo-item add-new" data-add-value="${escapeHtml(displayNew)}">
@@ -405,6 +415,45 @@
         return `<span class="badge badge-cyan">${escapeHtml(val)}</span>`;
     }
 
+    function stripMpPrefix(val) {
+        return String(val || '')
+            .trim()
+            .replace(/^(?:(?:LIC|AIC)\.\s*|(?:LIC|AIC)\s+)+/i, '')
+            .trim();
+    }
+
+    function buildPeritoComboItems(usersList) {
+        return (usersList || [])
+            .filter(u => u && u.active !== false)
+            .map(u => {
+                const alias = String(u.alias || '').trim().toUpperCase();
+                const full = String(u.fullName || u.username || '').trim().toUpperCase();
+                const value = alias || full;
+                return {
+                    value,
+                    displayLabel: full,
+                    badgeText: alias || '',
+                    searchText: `${full} ${alias} ${u.username || ''}`,
+                    status: 'approved'
+                };
+            });
+    }
+
+    function resolvePeritoAlias(peritoVal, usersList) {
+        const raw = String(peritoVal || '').trim();
+        if (!raw) return '';
+        const norm = normalizeText(raw);
+        const match = (usersList || []).find(u =>
+            (u.alias && normalizeText(u.alias) === norm) ||
+            (u.fullName && normalizeText(u.fullName) === norm) ||
+            (u.username && normalizeText(u.username) === norm)
+        );
+        if (match && match.alias && String(match.alias).trim()) {
+            return String(match.alias).trim().toUpperCase();
+        }
+        return raw;
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
         injectFgeLogo();
         registerOfflineServiceWorker();
@@ -418,6 +467,9 @@
         injectFgeLogo,
         escapeHtml,
         normalizeText,
+        stripMpPrefix,
+        buildPeritoComboItems,
+        resolvePeritoAlias,
         showToast,
         getTodayISO,
         formatDateDisplay,

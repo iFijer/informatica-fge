@@ -217,6 +217,7 @@
                             <div class="flex items-center gap-2 flex-wrap">
                                 <strong style="font-size:1.05rem;">${esc(u.fullName)}</strong>
                                 <span class="badge ${isMainAdmin ? 'badge-amber' : 'badge-cyan'}">${isMainAdmin ? 'Admin' : 'Usuario'}</span>
+                                ${u.alias ? `<span class="badge badge-slate">Alias: ${esc(u.alias)}</span>` : ''}
                                 ${u.active === false ? '<span class="badge badge-rose">Inactivo</span>' : '<span class="badge badge-emerald">Activo</span>'}
                             </div>
                             <div class="text-xs text-muted font-mono">@${esc(u.username)}</div>
@@ -257,6 +258,7 @@
         document.getElementById('usrEditId').value = isEdit ? u.id : '';
         document.getElementById('usrPhotoPreview').src = window.FGEUI.getAvatarSrc(u || { fullName: 'Nuevo' });
         document.getElementById('usrFullName').value = isEdit ? u.fullName : '';
+        document.getElementById('usrAlias').value = isEdit ? (u.alias || '') : '';
         document.getElementById('usrUsername').value = isEdit ? u.username : '';
         document.getElementById('usrEmail').value = isEdit ? u.email : '';
         document.getElementById('usrPassword').value = '';
@@ -274,6 +276,7 @@
 
         const editId = document.getElementById('usrEditId').value;
         const fullName = document.getElementById('usrFullName').value.trim();
+        const alias = document.getElementById('usrAlias').value.trim();
         const username = document.getElementById('usrUsername').value.trim();
         const email = document.getElementById('usrEmail').value.trim();
         const password = document.getElementById('usrPassword').value;
@@ -285,6 +288,7 @@
             if (editId) {
                 await window.FGEDB.updateUser(editId, {
                     fullName,
+                    alias,
                     username,
                     email,
                     photoDataUrl: pendingUserPhotoDataUrl,
@@ -294,6 +298,7 @@
             } else {
                 await window.FGEDB.createUser({
                     fullName,
+                    alias,
                     username,
                     email,
                     password,
@@ -408,6 +413,17 @@
         // 2. Navegación lateral de los 7 listados
         const nav = document.getElementById('catalogSidebarNav');
         nav.innerHTML = meta.map((m) => {
+            if (m.key === 'peritos') {
+                return `
+                    <button type="button" class="catalog-nav-btn ${m.key === activeCatalogKey ? 'active' : ''}" data-cat-key="${esc(m.key)}">
+                        <span>${esc(m.label)}</span>
+                        <span class="flex items-center gap-2">
+                            <span class="badge badge-cyan" style="font-size:0.62rem;">Usuarios</span>
+                            <span class="badge badge-slate">${usersList.length}</span>
+                        </span>
+                    </button>
+                `;
+            }
             const list = catalogsState.byCategory[m.key] || [];
             const pendCount = list.filter(x => x.status === 'pending').length;
             return `
@@ -428,6 +444,53 @@
         const esc = window.FGEUI.escapeHtml;
         const meta = window.FGE_SEED.CATALOG_META.find(m => m.key === activeCatalogKey);
         const searchQ = window.FGEUI.normalizeText(document.getElementById('catalogSearchInput').value);
+        const addForm = document.getElementById('addCatalogItemForm');
+        const container = document.getElementById('catalogItemsContainer');
+
+        if (activeCatalogKey === 'peritos') {
+            if (addForm) addForm.classList.add('hidden');
+            const filteredUsers = searchQ
+                ? usersList.filter(u => window.FGEUI.normalizeText(`${u.fullName} ${u.alias || ''} ${u.username}`).includes(searchQ))
+                : usersList;
+
+            document.getElementById('activeCatalogTitle').textContent = 'Listado de Peritos (Sincronizado con Usuarios)';
+            document.getElementById('activeCatalogCount').textContent = `${filteredUsers.length} de ${usersList.length} usuario(s)`;
+
+            const headerInfo = `
+                <div class="info-box flex items-center justify-between flex-wrap gap-2 mb-2">
+                    <span>La lista de <strong>Peritos</strong> proviene automáticamente de los <strong>Usuarios</strong> registrados. En la columna <strong>PERITO</strong> de las tablas se muestra el <strong>ALIAS</strong>.</span>
+                    <button type="button" class="btn btn-primary btn-sm" data-perito-user-act="new">+ Nuevo Usuario / Perito</button>
+                </div>
+            `;
+
+            if (filteredUsers.length === 0) {
+                container.innerHTML = headerInfo + `<div class="empty-state">No hay usuarios que coincidan con la búsqueda.</div>`;
+                return;
+            }
+
+            container.innerHTML = headerInfo + filteredUsers.map((u) => `
+                <div class="catalog-item-row">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold">${esc(u.fullName)}</span>
+                            ${u.alias
+                                ? `<span class="badge badge-cyan">Alias: ${esc(u.alias)}</span>`
+                                : '<span class="badge badge-amber">Sin alias</span>'}
+                            ${u.active === false
+                                ? '<span class="badge badge-rose" style="font-size:0.65rem;">Inactivo</span>'
+                                : '<span class="badge badge-emerald" style="font-size:0.65rem;">Activo</span>'}
+                        </div>
+                        <div class="text-xs text-muted font-mono mt-1">@${esc(u.username)} · ${esc(u.email)}</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="btn btn-secondary btn-sm" data-perito-user-act="edit" data-id="${esc(u.id)}">Editar Usuario</button>
+                    </div>
+                </div>
+            `).join('');
+            return;
+        }
+
+        if (addForm) addForm.classList.remove('hidden');
         const allInCat = catalogsState.byCategory[activeCatalogKey] || [];
         const filtered = searchQ
             ? allInCat.filter(i => window.FGEUI.normalizeText(i.value).includes(searchQ))
@@ -436,7 +499,6 @@
         document.getElementById('activeCatalogTitle').textContent = `Listado de ${meta ? meta.label : activeCatalogKey}`;
         document.getElementById('activeCatalogCount').textContent = `${filtered.length} de ${allInCat.length} elemento(s)`;
 
-        const container = document.getElementById('catalogItemsContainer');
         if (filtered.length === 0) {
             container.innerHTML = `<div class="empty-state">No hay elementos que coincidan en esta lista.</div>`;
             return;
@@ -637,11 +699,11 @@
                 <tr>
                     <td class="cell-num">${esc(r.numero)}</td>
                     <td class="font-mono font-bold">${esc(r.llamado)}</td>
-                    <td>${esc(r.perito)}</td>
+                    <td>${esc(window.FGEUI.resolvePeritoAlias(r.perito, usersList))}</td>
                     <td class="font-mono" style="white-space:nowrap;">${esc(window.FGEUI.formatDateDisplay(r.fechaIngreso))}</td>
                     <td class="font-mono">${esc(r.carpetaInvestigacion)}</td>
                     <td>${esc(r.fiscalia)}</td>
-                    <td>${esc(r.ministerioPublico)}</td>
+                    <td>${esc(window.FGEUI.stripMpPrefix(r.ministerioPublico))}</td>
                     <td>${esc(r.pericialSolicita)}</td>
                     <td style="text-align:center;">${window.FGEUI.renderEvidenciaBadge(r.evidencia)}</td>
                     <td class="font-mono" style="white-space:nowrap;">${esc(window.FGEUI.formatDateDisplay(r.fechaEntrega))}</td>
@@ -866,7 +928,16 @@
             }
         };
         document.getElementById('pendingCatalogsList').addEventListener('click', handleCatalogActionClick);
-        document.getElementById('catalogItemsContainer').addEventListener('click', handleCatalogActionClick);
+        document.getElementById('catalogItemsContainer').addEventListener('click', (e) => {
+            const peritoBtn = e.target.closest('button[data-perito-user-act]');
+            if (peritoBtn) {
+                const act = peritoBtn.getAttribute('data-perito-user-act');
+                if (act === 'new') openUserModal(null);
+                else if (act === 'edit') openUserModal(peritoBtn.getAttribute('data-id'));
+                return;
+            }
+            handleCatalogActionClick(e);
+        });
         const pendingAlertList = document.getElementById('pendingAlertList');
         if (pendingAlertList) {
             pendingAlertList.addEventListener('click', handleCatalogActionClick);

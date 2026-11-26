@@ -52,6 +52,9 @@
                     <div class="flex items-center gap-2 flex-wrap">
                         <strong id="adminFullName" style="font-size:1.1rem;">Administrador</strong>
                         <span class="badge badge-amber">Administrador</span>
+                        <span id="connectionStatusPill" class="status-pill local">
+                            <span class="dot"></span><span>Offline Local</span>
+                        </span>
                     </div>
                     <div id="adminSubInfo" class="text-xs text-muted font-mono">—</div>
                 </div>
@@ -464,15 +467,19 @@
 
                 <div class="form-group">
                     <label class="form-label" for="usrFullName">Nombre Completo <span class="req-star">*</span></label>
-                    <input type="text" id="usrFullName" class="form-control" placeholder="Ej. Ing. Luis Ángel Pérez" required>
+                    <input type="text" id="usrFullName" class="form-control" placeholder="nombre completo" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="usrAlias">Alias <span class="req-star">*</span></label>
+                    <input type="text" id="usrAlias" class="form-control" placeholder="Alias (se mostrará en PERITO)" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="usrUsername">Nombre de Acceso (Usuario) <span class="req-star">*</span></label>
-                    <input type="text" id="usrUsername" class="form-control font-mono" placeholder="Ej. luis.angel" required>
+                    <input type="text" id="usrUsername" class="form-control font-mono" placeholder="ifijer" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="usrEmail">Correo Electrónico <span class="req-star">*</span></label>
-                    <input type="email" id="usrEmail" class="form-control" placeholder="usuario@fiscaliamorelos.gob.mx" required>
+                    <input type="email" id="usrEmail" class="form-control" placeholder="usuario@correo.com" required>
                 </div>
 
                 <!-- Contraseña inicial SOLO al crear usuario; jamás visible después -->
