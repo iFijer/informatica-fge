@@ -23,9 +23,9 @@ window.FGE_SEED = {
         { key: 'pericialSolicita',        label: 'Qué pericial solicita (evidencia)',    excelHeader: 'QUE PERICIAL SOLICITA (EVIDENCIA)',   type: 'catalog',  catalogKey: 'pericial_solicita', required: true },
         { key: 'evidencia',               label: 'Evidencia',                            excelHeader: 'EVIDENCIA',                           type: 'catalog',  catalogKey: 'evidencias', required: true },
         { key: 'fechaEntrega',            label: 'Fecha de entrega',                     excelHeader: 'FECHA ENTREGA DICTAMEN',              type: 'date',     required: false },
-        { key: 'receptor',                label: 'Receptor',                             excelHeader: 'RECEPTOR',                            type: 'catalog',  catalogKey: 'receptores', required: true },
-        { key: 'queSeEntrego',            label: 'Qué se entregó',                       excelHeader: 'QUE SE ENTREGO',                      type: 'catalog',  catalogKey: 'que_se_entrego', required: true },
-        { key: 'observaciones',           label: 'Observaciones',                        excelHeader: 'OBSERVACIONES',                       type: 'textarea', required: true },
+        { key: 'receptor',                label: 'Receptor',                             excelHeader: 'RECEPTOR',                            type: 'catalog',  catalogKey: 'receptores', required: false },
+        { key: 'queSeEntrego',            label: 'Qué se entregó',                       excelHeader: 'QUE SE ENTREGO',                      type: 'catalog',  catalogKey: 'que_se_entrego', required: false },
+        { key: 'observaciones',           label: 'Observaciones',                        excelHeader: 'OBSERVACIONES',                       type: 'textarea', required: false },
         { key: 'fechaEntregaEvidencias',  label: 'Fecha entrega Evidencias',             excelHeader: 'FECHA ENTREGA EVIDENCIAS',            type: 'date',     required: false, lockOnceFilled: true },
         { key: 'custodioRecibeEvidencia', label: 'Custodio / AIC que recibe evidencia',  excelHeader: 'CUSTODIO /AIC QUE RECIBE EVIDENCIA',  type: 'text',     required: false, lockOnceFilled: true }
     ],

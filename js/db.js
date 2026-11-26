@@ -1030,7 +1030,91 @@
         } else {
             await idbPut('catalog_items', newItem);
         }
+
+        if (status === 'pending') {
+            notifyLocalCatalogChange(newItem);
+        }
         return newItem;
+    }
+
+    function notifyLocalCatalogChange(item) {
+        try {
+            localStorage.setItem('fge_catalog_pending_ping_v1', JSON.stringify({
+                id: item ? item.id : '',
+                ts: Date.now()
+            }));
+        } catch (e) { /* noop */ }
+        try {
+            if (typeof BroadcastChannel !== 'undefined') {
+                const ch = new BroadcastChannel('fge_catalog_updates');
+                ch.postMessage({ type: 'CATALOG_PENDING_ADDED', item });
+                ch.close();
+            }
+        } catch (e) { /* noop */ }
+    }
+
+    function subscribePendingCatalogs(onPendingChange) {
+        if (typeof onPendingChange !== 'function') return () => {};
+
+        if (activeMode === 'firebase' && fbDb) {
+            try {
+                const unsubscribe = fbDb.collection('catalog_items')
+                    .where('status', '==', 'pending')
+                    .onSnapshot((snap) => {
+                        const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        items.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+                        onPendingChange(items);
+                    }, (err) => {
+                        console.warn('Error en suscripción de catálogos pendientes:', err.message || err);
+                    });
+                return unsubscribe;
+            } catch (err) {
+                console.warn('No se pudo activar listener en tiempo real de catálogos:', err.message || err);
+            }
+        }
+
+        // Modo Local Offline: detectar cambios vía BroadcastChannel, storage entre pestañas y sondeo ligero
+        let stopped = false;
+        let lastSignature = null;
+
+        const checkNow = async () => {
+            if (stopped) return;
+            try {
+                const { pendingItems } = await getCatalogs();
+                const sorted = [...pendingItems].sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+                const sig = sorted.map(i => `${i.id}:${i.value}:${i.status}`).join('|');
+                if (sig !== lastSignature) {
+                    lastSignature = sig;
+                    onPendingChange(sorted);
+                }
+            } catch (e) { /* noop */ }
+        };
+
+        let channel = null;
+        try {
+            if (typeof BroadcastChannel !== 'undefined') {
+                channel = new BroadcastChannel('fge_catalog_updates');
+                channel.onmessage = () => { checkNow(); };
+            }
+        } catch (e) { /* noop */ }
+
+        const onStorage = (e) => {
+            if (e.key === 'fge_catalog_pending_ping_v1') checkNow();
+        };
+        window.addEventListener('storage', onStorage);
+
+        const intervalId = setInterval(() => {
+            if (!document.hidden) checkNow();
+        }, 4000);
+
+        return () => {
+            stopped = true;
+            clearInterval(intervalId);
+            window.removeEventListener('storage', onStorage);
+            if (channel) {
+                try { channel.close(); } catch (e) { /* noop */ }
+            }
+        };
     }
 
     async function propagateCatalogRenameToRecords(category, oldValue, newValue) {
@@ -1212,10 +1296,7 @@
             { key: 'fiscalia', label: 'Fiscalía' },
             { key: 'ministerioPublico', label: 'Ministerio Público' },
             { key: 'pericialSolicita', label: 'Qué pericial solicita (evidencia)' },
-            { key: 'evidencia', label: 'Evidencia' },
-            { key: 'receptor', label: 'Receptor' },
-            { key: 'queSeEntrego', label: 'Qué se entregó' },
-            { key: 'observaciones', label: 'Observaciones' }
+            { key: 'evidencia', label: 'Evidencia' }
         ];
 
         for (const f of requiredFields) {
@@ -1244,9 +1325,9 @@
             pericialSolicita: String(payload.pericialSolicita).trim().toUpperCase(),
             evidencia: String(payload.evidencia).trim().toUpperCase(),
             fechaEntrega: String(payload.fechaEntrega || '').trim(),
-            receptor: String(payload.receptor).trim().toUpperCase(),
-            queSeEntrego: String(payload.queSeEntrego).trim().toUpperCase(),
-            observaciones: String(payload.observaciones).trim().toUpperCase(),
+            receptor: String(payload.receptor || '').trim().toUpperCase(),
+            queSeEntrego: String(payload.queSeEntrego || '').trim().toUpperCase(),
+            observaciones: String(payload.observaciones || '').trim().toUpperCase(),
             fechaEntregaEvidencias: fechaEv,
             custodioRecibeEvidencia: custodioEv.toUpperCase(),
             // Regla estricta: una vez ingresado valor en entrega de evidencias, queda bloqueado definitivamente
@@ -1517,6 +1598,7 @@
         approveCatalogItem,
         updateCatalogItem,
         rejectCatalogItem,
+        subscribePendingCatalogs,
         getRecords,
         getNextRecordNumber,
         createRecord,
