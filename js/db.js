@@ -113,6 +113,7 @@
         return {
             id: u.id,
             fullName: u.fullName || '',
+            alias: String(u.alias || '').trim().toUpperCase(),
             username: u.username || '',
             usernameLower: (u.usernameLower || u.username || '').toLowerCase(),
             email: u.email || '',
@@ -132,6 +133,13 @@
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .toUpperCase();
+    }
+
+    function stripMpPrefix(str) {
+        return String(str || '')
+            .trim()
+            .replace(/^(?:(?:LIC|AIC)\.\s*|(?:LIC|AIC)\s+)+/i, '')
+            .trim();
     }
 
     // ======================================================================
@@ -335,6 +343,83 @@
         }
     }
 
+    async function cleanupExistingMpPrefixes() {
+        try {
+            if (activeMode === 'firebase' && fbDb) {
+                const snap = await fbDb.collection('catalog_items').where('category', '==', 'ministerios_publicos').get();
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const seenClean = new Map();
+                items.forEach(it => {
+                    const clean = stripMpPrefix(it.value).toUpperCase();
+                    if (clean === String(it.value || '').trim().toUpperCase()) {
+                        seenClean.set(normalizeForCompare(clean), it.id);
+                    }
+                });
+
+                const batch = fbDb.batch();
+                let ops = 0;
+                for (const it of items) {
+                    const clean = stripMpPrefix(it.value).toUpperCase();
+                    if (!clean || clean === String(it.value || '').trim().toUpperCase()) continue;
+                    const norm = normalizeForCompare(clean);
+                    if (seenClean.has(norm)) {
+                        batch.delete(fbDb.collection('catalog_items').doc(it.id));
+                    } else {
+                        seenClean.set(norm, it.id);
+                        batch.update(fbDb.collection('catalog_items').doc(it.id), {
+                            value: clean,
+                            valueNormalized: norm
+                        });
+                    }
+                    ops++;
+                }
+
+                const recSnap = await fbDb.collection('records').get();
+                recSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const curMp = String(data.ministerioPublico || '').trim();
+                    const cleanMp = stripMpPrefix(curMp).toUpperCase();
+                    if (curMp && cleanMp && cleanMp !== curMp.toUpperCase()) {
+                        batch.update(doc.ref, { ministerioPublico: cleanMp });
+                        ops++;
+                    }
+                });
+
+                if (ops > 0) await batch.commit();
+            } else {
+                const items = (await idbGetAll('catalog_items')).filter(i => i.category === 'ministerios_publicos');
+                const seenClean = new Map();
+                items.forEach(it => {
+                    const clean = stripMpPrefix(it.value).toUpperCase();
+                    if (clean === String(it.value || '').trim().toUpperCase()) {
+                        seenClean.set(normalizeForCompare(clean), it.id);
+                    }
+                });
+                for (const it of items) {
+                    const clean = stripMpPrefix(it.value).toUpperCase();
+                    if (!clean || clean === String(it.value || '').trim().toUpperCase()) continue;
+                    const norm = normalizeForCompare(clean);
+                    if (seenClean.has(norm)) {
+                        await idbDelete('catalog_items', it.id);
+                    } else {
+                        seenClean.set(norm, it.id);
+                        await idbPut('catalog_items', { ...it, value: clean, valueNormalized: norm });
+                    }
+                }
+                const recs = await idbGetAll('records');
+                for (const r of recs) {
+                    const curMp = String(r.ministerioPublico || '').trim();
+                    const cleanMp = stripMpPrefix(curMp).toUpperCase();
+                    if (curMp && cleanMp && cleanMp !== curMp.toUpperCase()) {
+                        await idbPut('records', { ...r, ministerioPublico: cleanMp });
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Aviso al limpiar prefijos LIC./AIC. en Ministerios Públicos:', e.message || e);
+        }
+    }
+
     // ======================================================================
     // 4. INICIALIZACIÓN GENERAL Y SESIÓN
     // ======================================================================
@@ -396,6 +481,7 @@
                         const profile = {
                             id: fbUser.uid,
                             fullName: isBootstrapAdmin ? window.FGE_CONFIG.ADMIN_DISPLAY_NAME : (fbUser.displayName || fbUser.email.split('@')[0]),
+                            alias: isBootstrapAdmin ? 'ADMIN' : '',
                             username: isBootstrapAdmin ? window.FGE_CONFIG.ADMIN_USERNAME : fbUser.email.split('@')[0],
                             usernameLower: (isBootstrapAdmin ? window.FGE_CONFIG.ADMIN_USERNAME : fbUser.email.split('@')[0]).toLowerCase(),
                             email: fbUser.email,
@@ -417,6 +503,7 @@
                     }
                     if (currentUserCache && currentUserCache.role === 'admin') {
                         await seedFirebaseCatalogsIfEmpty();
+                        await cleanupExistingMpPrefixes();
                     }
                 } catch (e) {
                     const saved = readLocalSession();
@@ -429,6 +516,7 @@
                 saveLocalSession(null);
             }
         } else {
+            await cleanupExistingMpPrefixes();
             const saved = readLocalSession();
             if (saved && saved.userId) {
                 const user = await idbGet('users', saved.userId);
@@ -519,6 +607,7 @@
                 profile = {
                     id: uid,
                     fullName: isBootstrapAdmin ? window.FGE_CONFIG.ADMIN_DISPLAY_NAME : emailToUse.split('@')[0],
+                    alias: isBootstrapAdmin ? 'ADMIN' : '',
                     username: isBootstrapAdmin ? window.FGE_CONFIG.ADMIN_USERNAME : emailToUse.split('@')[0],
                     usernameLower: (isBootstrapAdmin ? window.FGE_CONFIG.ADMIN_USERNAME : emailToUse.split('@')[0]).toLowerCase(),
                     email: emailToUse,
@@ -541,6 +630,7 @@
             saveLocalSession(currentUserCache);
             if (currentUserCache.role === 'admin') {
                 await seedFirebaseCatalogsIfEmpty();
+                await cleanupExistingMpPrefixes();
             }
             return currentUserCache;
         }
@@ -788,18 +878,19 @@
             .sort((a, b) => (a.role === 'admin' ? -1 : b.role === 'admin' ? 1 : a.fullName.localeCompare(b.fullName, 'es')));
     }
 
-    async function createUser({ fullName, username, email, password, photoDataUrl = '', sendResetEmailOnCreate = false }) {
+    async function createUser({ fullName, alias = '', username, email, password, photoDataUrl = '', sendResetEmailOnCreate = false }) {
         await init();
         if (!currentUserCache || currentUserCache.role !== 'admin') {
             throw new Error('Solo el administrador puede crear usuarios.');
         }
         const cleanName = String(fullName || '').trim();
+        const cleanAlias = String(alias || '').trim().toUpperCase();
         const cleanUsername = String(username || '').trim();
         const cleanEmail = String(email || '').trim().toLowerCase();
         const cleanPwd = String(password || '');
 
-        if (!cleanName || !cleanUsername || !cleanEmail) {
-            throw new Error('Nombre completo, nombre de acceso y correo electrónico son obligatorios.');
+        if (!cleanName || !cleanAlias || !cleanUsername || !cleanEmail) {
+            throw new Error('Nombre completo, alias, nombre de acceso y correo electrónico son obligatorios.');
         }
         if (/\s/.test(cleanUsername)) {
             throw new Error('El nombre de acceso no debe contener espacios.');
@@ -844,6 +935,7 @@
             const profile = {
                 id: uid,
                 fullName: cleanName,
+                alias: cleanAlias,
                 username: cleanUsername,
                 usernameLower: lowerUser,
                 email: cleanEmail,
@@ -868,6 +960,7 @@
         const newUser = {
             id: generateId('usr'),
             fullName: cleanName,
+            alias: cleanAlias,
             username: cleanUsername,
             usernameLower: lowerUser,
             email: cleanEmail,
@@ -885,7 +978,7 @@
         return sanitizeUser(newUser);
     }
 
-    async function updateUser(userId, { fullName, username, email, photoDataUrl, active }) {
+    async function updateUser(userId, { fullName, alias, username, email, photoDataUrl, active }) {
         await init();
         if (!currentUserCache || currentUserCache.role !== 'admin') {
             throw new Error('Solo el administrador puede editar usuarios.');
@@ -895,12 +988,15 @@
         if (!target) throw new Error('Usuario no encontrado.');
 
         const cleanName = String(fullName || '').trim();
+        const cleanAlias = alias !== undefined
+            ? String(alias || '').trim().toUpperCase()
+            : String(target.alias || '').trim().toUpperCase();
         const cleanUsername = String(username || '').trim();
         const cleanEmail = String(email || '').trim().toLowerCase();
         const lowerUser = cleanUsername.toLowerCase();
 
-        if (!cleanName || !cleanUsername || !cleanEmail) {
-            throw new Error('Nombre completo, nombre de acceso y correo son obligatorios.');
+        if (!cleanName || !cleanAlias || !cleanUsername || !cleanEmail) {
+            throw new Error('Nombre completo, alias, nombre de acceso y correo son obligatorios.');
         }
         if (allUsers.some(u => u.id !== userId && u.usernameLower === lowerUser)) {
             throw new Error(`El nombre de acceso "${cleanUsername}" ya está en uso.`);
@@ -912,6 +1008,7 @@
         const isMainAdmin = target.role === 'admin' && target.usernameLower === window.FGE_CONFIG.ADMIN_USERNAME.toLowerCase();
         const nextActive = isMainAdmin ? true : (active !== false);
         const now = new Date().toISOString();
+        const oldAlias = String(target.alias || '').trim().toUpperCase();
 
         if (activeMode === 'firebase') {
             if (target.usernameLower !== lowerUser) {
@@ -919,6 +1016,7 @@
             }
             const patch = {
                 fullName: cleanName,
+                alias: cleanAlias,
                 username: cleanUsername,
                 usernameLower: lowerUser,
                 email: cleanEmail,
@@ -932,11 +1030,15 @@
                 userId,
                 active: nextActive
             });
+            if (oldAlias && oldAlias !== cleanAlias) {
+                await propagateCatalogRenameToRecords('peritos', oldAlias, cleanAlias).catch(() => {});
+            }
             return sanitizeUser({ ...target, ...patch });
         }
 
         const stored = await idbGet('users', userId);
         stored.fullName = cleanName;
+        stored.alias = cleanAlias;
         stored.username = cleanUsername;
         stored.usernameLower = lowerUser;
         stored.email = cleanEmail;
@@ -944,6 +1046,9 @@
         if (photoDataUrl !== undefined) stored.photoDataUrl = photoDataUrl;
         stored.updatedAt = now;
         await idbPut('users', stored);
+        if (oldAlias && oldAlias !== cleanAlias) {
+            await propagateCatalogRenameToRecords('peritos', oldAlias, cleanAlias).catch(() => {});
+        }
         return sanitizeUser(stored);
     }
 
@@ -999,7 +1104,8 @@
 
     async function addCatalogItem(category, rawValue, { asApproved = false } = {}) {
         await init();
-        const cleanVal = String(rawValue || '').trim().toUpperCase();
+        const rawClean = category === 'ministerios_publicos' ? stripMpPrefix(rawValue) : rawValue;
+        const cleanVal = String(rawClean || '').trim().toUpperCase();
         if (!cleanVal) throw new Error('El valor no puede estar vacío.');
         const norm = normalizeForCompare(cleanVal);
 
@@ -1151,7 +1257,10 @@
         const item = allItems.find(i => i.id === itemId);
         if (!item) throw new Error('Elemento no encontrado.');
 
-        const finalVal = String(editedValue || item.value).trim().toUpperCase();
+        const rawFinal = item.category === 'ministerios_publicos'
+            ? stripMpPrefix(editedValue || item.value)
+            : (editedValue || item.value);
+        const finalVal = String(rawFinal || '').trim().toUpperCase();
         if (!finalVal) throw new Error('El texto del elemento no puede estar vacío.');
         const finalNorm = normalizeForCompare(finalVal);
         const now = new Date().toISOString();
@@ -1273,7 +1382,10 @@
         const meta = window.FGE_SEED ? window.FGE_SEED.CATALOG_META : [];
         const { byCategory } = await getCatalogs();
         for (const m of meta) {
-            const val = String(payload[m.field] || '').trim();
+            if (m.key === 'peritos') continue;
+            let val = String(payload[m.field] || '').trim();
+            if (!val) continue;
+            if (m.key === 'ministerios_publicos') val = stripMpPrefix(val);
             if (!val) continue;
             const norm = normalizeForCompare(val);
             const list = byCategory[m.key] || [];
@@ -1282,6 +1394,22 @@
                 await addCatalogItem(m.key, val, { asApproved: currentUserCache && currentUserCache.role === 'admin' });
             }
         }
+    }
+
+    async function resolvePeritoToAlias(rawPerito) {
+        const clean = String(rawPerito || '').trim();
+        if (!clean) return '';
+        try {
+            const users = await getUsers();
+            const norm = normalizeForCompare(clean);
+            const match = users.find(u =>
+                (u.alias && normalizeForCompare(u.alias) === norm) ||
+                (u.fullName && normalizeForCompare(u.fullName) === norm) ||
+                (u.username && normalizeForCompare(u.username) === norm)
+            );
+            if (match && match.alias) return match.alias.toUpperCase();
+        } catch (e) { /* fallback to raw */ }
+        return clean.toUpperCase();
     }
 
     async function createRecord(payload) {
@@ -1305,8 +1433,12 @@
             }
         }
 
+        const cleanMp = stripMpPrefix(payload.ministerioPublico).toUpperCase();
+        const resolvedPerito = await resolvePeritoToAlias(payload.perito);
+        const normalizedPayload = { ...payload, ministerioPublico: cleanMp, perito: resolvedPerito };
+
         // Asegurar que cualquier texto nuevo escrito en listados se adjunte (como pendiente para Admin)
-        await ensureCatalogValuesExist(payload);
+        await ensureCatalogValuesExist(normalizedPayload);
 
         const numero = await allocateConsecutiveNumber();
         const now = new Date().toISOString();
@@ -1317,11 +1449,11 @@
             id: generateId('rec'),
             numero,
             llamado: String(payload.llamado).trim().toUpperCase(),
-            perito: String(payload.perito).trim().toUpperCase(),
+            perito: resolvedPerito,
             fechaIngreso: String(payload.fechaIngreso).trim(),
             carpetaInvestigacion: String(payload.carpetaInvestigacion).trim().toUpperCase(),
             fiscalia: String(payload.fiscalia).trim().toUpperCase(),
-            ministerioPublico: String(payload.ministerioPublico).trim().toUpperCase(),
+            ministerioPublico: cleanMp,
             pericialSolicita: String(payload.pericialSolicita).trim().toUpperCase(),
             evidencia: String(payload.evidencia).trim().toUpperCase(),
             fechaEntrega: String(payload.fechaEntrega || '').trim(),
@@ -1472,7 +1604,9 @@
         for (const f of editableMeta) {
             if (!(f.key in updatedFields)) continue;
             let newVal = String(updatedFields[f.key] || '').trim();
+            if (f.key === 'ministerioPublico') newVal = stripMpPrefix(newVal);
             if (f.type !== 'date') newVal = newVal.toUpperCase();
+            if (f.key === 'perito' && newVal) newVal = await resolvePeritoToAlias(newVal);
             if (f.required && !newVal) {
                 throw new Error(`El campo obligatorio "${f.label}" no puede quedar vacío.`);
             }

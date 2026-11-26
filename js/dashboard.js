@@ -4,6 +4,7 @@
 
 (function () {
     let currentUser = null;
+    let allUsers = [];
     let allRecords = [];
     let catalogsState = { allItems: [], byCategory: {}, pendingItems: [] };
     let addCombos = {};
@@ -40,10 +41,12 @@
     }
 
     async function reloadAllData() {
-        const [cats, recs] = await Promise.all([
+        const [users, cats, recs] = await Promise.all([
+            window.FGEDB.getUsers(),
             window.FGEDB.getCatalogs(),
             window.FGEDB.getRecords()
         ]);
+        allUsers = users;
         catalogsState = cats;
         allRecords = recs;
         populateFilterDropdowns();
@@ -52,7 +55,7 @@
 
     function initCombos() {
         const comboDefs = [
-            { containerId: 'comboAddPerito',        inputId: 'addPerito',        cat: 'peritos',              ph: 'Selecciona o escribe perito...' },
+            { containerId: 'comboAddPerito',        inputId: 'addPerito',        cat: 'peritos',              ph: 'Selecciona perito (usuario)...' },
             { containerId: 'comboAddFiscalia',      inputId: 'addFiscalia',      cat: 'fiscalias',            ph: 'Selecciona o escribe fiscalía...' },
             { containerId: 'comboAddMP',            inputId: 'addMP',            cat: 'ministerios_publicos', ph: 'Selecciona o escribe MP...' },
             { containerId: 'comboAddPericial',      inputId: 'addPericial',      cat: 'pericial_solicita',    ph: 'Selecciona o escribe pericial...' },
@@ -62,12 +65,16 @@
         ];
 
         comboDefs.forEach((def) => {
+            const isPerito = def.cat === 'peritos';
             addCombos[def.cat] = window.FGEUI.createSearchableCombo({
                 container: document.getElementById(def.containerId),
                 inputId: def.inputId,
                 placeholder: def.ph,
-                getItems: () => catalogsState.byCategory[def.cat] || [],
-                onManualAdd: async (newVal) => {
+                allowManualAdd: !isPerito,
+                getItems: () => isPerito
+                    ? window.FGEUI.buildPeritoComboItems(allUsers)
+                    : (catalogsState.byCategory[def.cat] || []),
+                onManualAdd: isPerito ? null : async (newVal) => {
                     const item = await window.FGEDB.addCatalogItem(def.cat, newVal, {
                         asApproved: currentUser.role === 'admin'
                     });
@@ -79,7 +86,7 @@
         });
 
         const corrDefs = [
-            { containerId: 'comboCorrPerito',       inputId: 'corrPerito',       cat: 'peritos',              ph: 'Perito...' },
+            { containerId: 'comboCorrPerito',       inputId: 'corrPerito',       cat: 'peritos',              ph: 'Perito (usuario)...' },
             { containerId: 'comboCorrFiscalia',     inputId: 'corrFiscalia',     cat: 'fiscalias',            ph: 'Fiscalía...' },
             { containerId: 'comboCorrMP',           inputId: 'corrMP',           cat: 'ministerios_publicos', ph: 'Ministerio Público...' },
             { containerId: 'comboCorrPericial',     inputId: 'corrPericial',     cat: 'pericial_solicita',    ph: 'Pericial...' },
@@ -89,12 +96,16 @@
         ];
 
         corrDefs.forEach((def) => {
+            const isPerito = def.cat === 'peritos';
             corrCombos[def.cat] = window.FGEUI.createSearchableCombo({
                 container: document.getElementById(def.containerId),
                 inputId: def.inputId,
                 placeholder: def.ph,
-                getItems: () => catalogsState.byCategory[def.cat] || [],
-                onManualAdd: async (newVal) => {
+                allowManualAdd: !isPerito,
+                getItems: () => isPerito
+                    ? window.FGEUI.buildPeritoComboItems(allUsers)
+                    : (catalogsState.byCategory[def.cat] || []),
+                onManualAdd: isPerito ? null : async (newVal) => {
                     const item = await window.FGEDB.addCatalogItem(def.cat, newVal, {
                         asApproved: currentUser.role === 'admin'
                     });
@@ -187,11 +198,11 @@
                 <tr>
                     <td class="cell-num">${esc(r.numero)}</td>
                     <td class="font-mono font-bold">${esc(r.llamado)}</td>
-                    <td>${esc(r.perito)}</td>
+                    <td>${esc(window.FGEUI.resolvePeritoAlias(r.perito, allUsers))}</td>
                     <td class="font-mono" style="white-space:nowrap;">${esc(window.FGEUI.formatDateDisplay(r.fechaIngreso))}</td>
                     <td class="font-mono">${esc(r.carpetaInvestigacion)}</td>
                     <td>${esc(r.fiscalia)}</td>
-                    <td>${esc(r.ministerioPublico)}</td>
+                    <td>${esc(window.FGEUI.stripMpPrefix(r.ministerioPublico))}</td>
                     <td>${esc(r.pericialSolicita)}</td>
                     <td style="text-align:center;">${window.FGEUI.renderEvidenciaBadge(r.evidencia)}</td>
                     <td class="font-mono" style="white-space:nowrap;">${esc(window.FGEUI.formatDateDisplay(r.fechaEntrega))}</td>
@@ -244,8 +255,13 @@
     // MODAL AGREGAR (CON VALIDACIÓN PREVIA ANTES DE GUARDAR)
     // ======================================================================
     async function openAddModal() {
-        catalogsState = await window.FGEDB.getCatalogs();
-        const nextNum = await window.FGEDB.getNextRecordNumber();
+        const [users, cats, nextNum] = await Promise.all([
+            window.FGEDB.getUsers(),
+            window.FGEDB.getCatalogs(),
+            window.FGEDB.getNextRecordNumber()
+        ]);
+        allUsers = users;
+        catalogsState = cats;
 
         document.getElementById('addNumero').value = nextNum;
         document.getElementById('addLlamado').value = '';
@@ -332,11 +348,11 @@
         const rows = [
             ['1. Número (Consecutivo)', `#${payload.numero}`],
             ['2. Llamado', payload.llamado.toUpperCase()],
-            ['3. Perito', payload.perito.toUpperCase()],
+            ['3. Perito (Alias)', window.FGEUI.resolvePeritoAlias(payload.perito, allUsers).toUpperCase()],
             ['4. Fecha de ingreso', window.FGEUI.formatDateDisplay(payload.fechaIngreso)],
             ['5. Carpeta de investigación', payload.carpetaInvestigacion.toUpperCase()],
             ['6. Fiscalía', payload.fiscalia.toUpperCase()],
-            ['7. Ministerio Público', payload.ministerioPublico.toUpperCase()],
+            ['7. Ministerio Público', window.FGEUI.stripMpPrefix(payload.ministerioPublico).toUpperCase()],
             ['8. Qué pericial solicita (evidencia)', payload.pericialSolicita.toUpperCase()],
             ['9. Evidencia', payload.evidencia.toUpperCase()],
             ['10. Fecha de entrega (Dictamen)', payload.fechaEntrega ? window.FGEUI.formatDateDisplay(payload.fechaEntrega) : 'Sin capturar (opcional)'],
@@ -438,16 +454,21 @@
     async function openCorrectionModal(recordId) {
         const rec = allRecords.find(r => r.id === recordId);
         if (!rec) return;
-        catalogsState = await window.FGEDB.getCatalogs();
+        const [users, cats] = await Promise.all([
+            window.FGEDB.getUsers(),
+            window.FGEDB.getCatalogs()
+        ]);
+        allUsers = users;
+        catalogsState = cats;
         activeCorrectionRecord = rec;
 
         document.getElementById('corrModalNum').textContent = rec.numero;
         document.getElementById('corrLlamado').value = rec.llamado || '';
-        corrCombos.peritos.setValue(rec.perito || '');
+        corrCombos.peritos.setValue(window.FGEUI.resolvePeritoAlias(rec.perito || '', allUsers));
         document.getElementById('corrFechaIngreso').value = rec.fechaIngreso || '';
         document.getElementById('corrCarpeta').value = rec.carpetaInvestigacion || '';
         corrCombos.fiscalias.setValue(rec.fiscalia || '');
-        corrCombos.ministerios_publicos.setValue(rec.ministerioPublico || '');
+        corrCombos.ministerios_publicos.setValue(window.FGEUI.stripMpPrefix(rec.ministerioPublico || ''));
         corrCombos.pericial_solicita.setValue(rec.pericialSolicita || '');
         corrCombos.evidencias.setValue(rec.evidencia || '');
         document.getElementById('corrFechaEntrega').value = rec.fechaEntrega || '';
