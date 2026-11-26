@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Panel Administrador — Sistema de Registro de Peticiones de Informática Forense FGE Morelos.">
+    <meta name="author" content="Isaí Figueroa J.">
+    <title>Panel Administrador — Registro Informática Forense | FGE Morelos</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Fondo animado de partículas idéntico al index.html de referencia -->
+    <canvas id="network-canvas"></canvas>
+
+    <!-- BOTÓN SUPERIOR IZQUIERDO: INICIO -->
+    <a href="index.html" class="btn-inicio" title="Volver al Inicio / Acceso">
+        <svg class="svg-icon text-cyan" style="width: 1.25em; height: 1.25em;" viewBox="0 0 24 24">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Inicio</span>
+    </a>
+
+    <!-- LOGO SUPERIOR DERECHO: FISCALÍA GENERAL DEL ESTADO DE MORELOS -->
+    <div id="fgeLogoSlot" class="logo-fge" title="Fiscalía General del Estado de Morelos"></div>
+
+    <main class="page-shell">
+        <!-- ENCABEZADO INSTITUCIONAL -->
+        <header class="page-header">
+            <div class="header-icon-box">
+                <svg style="width: 2.25rem; height: 2.25rem; color: #ffffff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(255,255,255,0.16)"/>
+                    <circle cx="12" cy="10" r="3"/>
+                    <path d="M7.5 17a5 5 0 0 1 9 0"/>
+                </svg>
+                <span class="animate-ping" style="position:absolute; width:0.625rem; height:0.625rem; border-radius:9999px; top:6px; right:6px; background-color:#f87171;"></span>
+                <span style="position:absolute; width:0.625rem; height:0.625rem; border-radius:9999px; top:6px; right:6px; background-color:#ef4444; border:1px solid rgba(255,255,255,0.6);"></span>
+            </div>
+            <h1 class="title-gradient">PANEL ADMINISTRADOR — INFORMÁTICA FORENSE</h1>
+            <h2>
+                Fiscalía General del Estado de Morelos ·
+                <a class="u-link" href="http://www.isaifijer.com.mx" target="_blank" rel="noopener noreferrer">Isaí Figueroa J.</a>
+            </h2>
+        </header>
+
+        <!-- BARRA SUPERIOR DEL ADMINISTRADOR -->
+        <section class="glass-panel user-toolbar">
+            <div class="user-identity">
+                <img id="adminAvatar" src="" alt="Administrador" class="avatar-circle">
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <strong id="adminFullName" style="font-size:1.1rem;">Administrador</strong>
+                        <span class="badge badge-amber">Administrador</span>
+                        <span id="connectionStatusPill" class="status-pill local">
+                            <span class="dot"></span><span>Offline Local</span>
+                        </span>
+                    </div>
+                    <div id="adminSubInfo" class="text-xs text-muted font-mono">—</div>
+                </div>
+            </div>
+
+            <div class="toolbar-actions">
+                <button type="button" id="btnExportAllDBExcel" class="btn btn-success">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    <span>Descargar BD Completa (Excel)</span>
+                </button>
+                <a href="dashboard.html" class="btn btn-primary">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                    <span>Ir al Dashboard</span>
+                </a>
+                <button type="button" id="btnAdminProfile" class="btn btn-secondary btn-sm">Mi Perfil</button>
+                <button type="button" id="btnAdminLogout" class="btn btn-danger btn-sm">Salir</button>
+            </div>
+        </section>
+
+        <!-- KPI GLOBALES -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Usuarios Registrados</div>
+                    <div id="statUsersCount" class="kpi-value text-cyan">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(6,182,212,0.16); color:#22d3ee;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Total Registros BD</div>
+                    <div id="statRecordsCount" class="kpi-value text-emerald">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(16,185,129,0.16); color:#34d399;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Listados Pendientes</div>
+                    <div id="statPendingCatalogs" class="kpi-value text-amber">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(245,158,11,0.16); color:#fbbf24;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Cambios en Auditoría</div>
+                    <div id="statAuditCount" class="kpi-value" style="color:#93c5fd;">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(59,130,246,0.18); color:#60a5fa;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- NAVEGACIÓN POR PESTAÑAS DEL ADMINISTRADOR -->
+        <nav class="tabs-nav" role="tablist">
+            <button type="button" class="tab-btn active" data-tab="tabUsers">
+                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                <span>Usuarios</span>
+            </button>
+            <button type="button" class="tab-btn" data-tab="tabCatalogs">
+                <svg class="svg-icon" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                <span>Listados (7 Catálogos)</span>
+                <span id="tabPendingBadge" class="tab-badge hidden">0</span>
+            </button>
+            <button type="button" class="tab-btn" data-tab="tabReports">
+                <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Informes y Gráficas</span>
+            </button>
+            <button type="button" class="tab-btn" data-tab="tabDatabase">
+                <svg class="svg-icon" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                <span>Base de Datos e Historial</span>
+            </button>
+            <button type="button" class="tab-btn" data-tab="tabFirebase">
+                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Firebase y Respaldos</span>
+            </button>
+        </nav>
+
+        <!-- ==================================================================
+             PESTAÑA 1: GESTIÓN DE USUARIOS
+             ================================================================== -->
+        <section id="tabUsers" class="tab-panel active">
+            <div class="glass-panel controls-bar">
+                <div>
+                    <h3 style="margin:0; font-size:1.15rem; text-transform:uppercase;">Control de Usuarios</h3>
+                    <p class="text-xs text-muted" style="margin:0.2rem 0 0 0;">
+                        Las contraseñas están cifradas y ocultas. Usa el botón <strong>"Resetear Contraseña"</strong> para enviar un correo al usuario y que capture su nueva contraseña.
+                    </p>
+                </div>
+                <button type="button" id="btnOpenNewUserModal" class="btn btn-primary">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Nuevo Usuario</span>
+                </button>
+            </div>
+
+            <div id="usersGrid" class="users-grid"></div>
+        </section>
+
+        <!-- ==================================================================
+             PESTAÑA 2: 7 LISTADOS DEL DASHBOARD + PENDIENTES DE AUTORIZACIÓN
+             ================================================================== -->
+        <section id="tabCatalogs" class="tab-panel">
+            <!-- Bandeja de Pendientes -->
+            <div id="pendingCatalogsCard" class="glass-panel hidden" style="padding: 1.15rem; border-color: rgba(251,191,36,0.5);">
+                <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <div>
+                        <h3 style="margin:0; font-size:1.1rem; color:#fde68a; text-transform:uppercase;">
+                            Elementos Agregados Manualmente — Pendientes de Autorización
+                        </h3>
+                        <p class="text-xs text-muted" style="margin:0.15rem 0 0 0;">
+                            Revisa, edita (si hay errores de ortografía) o autoriza estos valores capturados por los usuarios para incorporarlos oficialmente a las listas.
+                        </p>
+                    </div>
+                </div>
+                <div id="pendingCatalogsList" class="flex flex-col gap-2"></div>
+            </div>
+
+            <!-- Editor de los 7 Catálogos -->
+            <div class="catalog-layout">
+                <aside class="glass-panel" style="padding: 1rem;">
+                    <div class="form-label mb-2">Campos en Forma de Lista</div>
+                    <div id="catalogSidebarNav" class="catalog-sidebar"></div>
+                </aside>
+
+                <div class="glass-panel" style="padding: 1.2rem;">
+                    <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                        <div>
+                            <h3 id="activeCatalogTitle" style="margin:0; font-size:1.15rem; text-transform:uppercase;">Listado</h3>
+                            <span id="activeCatalogCount" class="text-xs text-muted font-mono">0 elementos</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <input type="text" id="catalogSearchInput" class="form-control" style="width:220px;" placeholder="Filtrar lista...">
+                        </div>
+                    </div>
+
+                    <form id="addCatalogItemForm" class="flex flex-wrap gap-2 mb-3">
+                        <input type="text" id="newCatalogValueInput" class="form-control" style="flex:1 1 260px;" placeholder="Escribe un nuevo elemento para esta lista...">
+                        <button type="submit" class="btn btn-primary">
+                            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <span>Agregar a la Lista</span>
+                        </button>
+                    </form>
+
+                    <div id="catalogItemsContainer" class="flex flex-col gap-2" style="max-height: 52vh; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             PESTAÑA 3: INFORMES Y GRÁFICAS DEL ADMINISTRADOR (INDIVIDUAL / SELECCIÓN / TODOS)
+             ================================================================== -->
+        <section id="tabReports" class="tab-panel">
+            <div class="glass-panel" style="padding: 1.2rem; display:flex; flex-direction:column; gap:1rem;">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <h3 style="margin:0; font-size:1.15rem; text-transform:uppercase;">Informes y Gráficas Multiusuario</h3>
+                        <p class="text-xs text-muted" style="margin:0.2rem 0 0 0;">
+                            Como administrador puedes generar informes de <strong>todos los usuarios</strong>, de <strong>un solo usuario</strong> o de <strong>una selección específica</strong> y exportarlos con gráficas a Excel.
+                        </p>
+                    </div>
+                    <button type="button" id="btnAdminExportReportExcel" class="btn btn-success">
+                        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Exportar Informe + Gráficas (.xlsx)</span>
+                    </button>
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label" for="adminRepScopeMode">Alcance del Informe</label>
+                        <select id="adminRepScopeMode" class="form-control">
+                            <option value="all">Todos los usuarios</option>
+                            <option value="single">Un usuario individual</option>
+                            <option value="selected">Solo algunos usuarios seleccionados</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="adminRepDateFrom">Fecha Ingreso Desde</label>
+                        <input type="date" id="adminRepDateFrom" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="adminRepDateTo">Fecha Ingreso Hasta</label>
+                        <input type="date" id="adminRepDateTo" class="form-control">
+                    </div>
+                </div>
+
+                <!-- Selector Individual -->
+                <div id="adminRepSingleBox" class="form-group hidden">
+                    <label class="form-label" for="adminRepSingleUserSelect">Selecciona el Usuario</label>
+                    <select id="adminRepSingleUserSelect" class="form-control" style="max-width:420px;"></select>
+                </div>
+
+                <!-- Selector Múltiple -->
+                <div id="adminRepMultiBox" class="form-group hidden">
+                    <div class="flex items-center justify-between">
+                        <label class="form-label">Selecciona los Usuarios a Incluir</label>
+                        <div class="flex gap-2">
+                            <button type="button" id="btnSelectAllUsersRep" class="btn btn-ghost btn-sm">Marcar todos</button>
+                            <button type="button" id="btnClearAllUsersRep" class="btn btn-ghost btn-sm">Desmarcar</button>
+                        </div>
+                    </div>
+                    <div id="adminRepMultiCheckboxes" class="user-checklist"></div>
+                </div>
+
+                <!-- Columnas / Gráficas -->
+                <div class="form-group">
+                    <label class="form-label">Columnas / Gráficas a Generar</label>
+                    <div id="adminRepDimsCheckboxes" class="user-checklist"></div>
+                </div>
+            </div>
+
+            <div id="adminReportKpis" class="kpi-grid"></div>
+            <div id="adminReportChartsGrid" class="charts-grid"></div>
+        </section>
+
+        <!-- ==================================================================
+             PESTAÑA 4: BASE DE DATOS GLOBAL E HISTORIAL DE CAMBIOS
+             ================================================================== -->
+        <section id="tabDatabase" class="tab-panel">
+            <div class="glass-panel controls-bar">
+                <div class="filters-group">
+                    <div class="search-box">
+                        <svg class="svg-icon search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="adminDbSearch" class="form-control" placeholder="Buscar en toda la base de datos...">
+                    </div>
+                    <select id="adminDbUserFilter" class="form-control" style="width:auto; min-width:200px;">
+                        <option value="">Todos los usuarios</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" id="btnExportDbTabExcel" class="btn btn-success btn-sm">
+                        Descargar Toda la BD en Excel (.xlsx)
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1rem;">
+                <h4 style="margin:0 0 0.75rem 0; text-transform:uppercase; color:#bfdbfe;">Registros Globales de Todos los Usuarios</h4>
+                <div class="table-container" style="max-height: 44vh; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align:center;">NUM</th>
+                                <th>LLAMADO</th>
+                                <th>PERITO</th>
+                                <th>FECHA INGRESO</th>
+                                <th>CARPETA</th>
+                                <th>FISCALÍA</th>
+                                <th>MINISTERIO PÚBLICO</th>
+                                <th>PERICIAL SOLICITA</th>
+                                <th>EVIDENCIA</th>
+                                <th>ENTREGA DICT.</th>
+                                <th>RECEPTOR</th>
+                                <th>QUÉ SE ENTREGÓ</th>
+                                <th>OBSERVACIONES</th>
+                                <th>FECHA ENT. EVID.</th>
+                                <th>CUSTODIO / AIC</th>
+                                <th>CAPTURÓ</th>
+                                <th>CAMBIOS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminDbTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1.15rem;">
+                <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <h4 style="margin:0; text-transform:uppercase; color:#fde68a;">Historial Global de Cambios (Auditoría Inmutable)</h4>
+                    <span id="adminAuditTotalLabel" class="text-xs text-muted font-mono">0 eventos</span>
+                </div>
+                <div class="table-container" style="max-height: 40vh; overflow-y: auto;">
+                    <table class="data-table compact">
+                        <thead>
+                            <tr>
+                                <th style="text-align:center;">FOLIO</th>
+                                <th>ACCIÓN</th>
+                                <th>CAMPO</th>
+                                <th>VALOR ANTERIOR</th>
+                                <th>VALOR NUEVO</th>
+                                <th>MOTIVO</th>
+                                <th>EDITADO POR</th>
+                                <th>FECHA Y HORA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminAuditTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             PESTAÑA 5: CONFIGURACIÓN DE FIREBASE Y RESPALDOS OFFLINE
+             ================================================================== -->
+        <section id="tabFirebase" class="tab-panel">
+            <div class="form-grid-2">
+                <div class="glass-panel" style="padding: 1.25rem; display:flex; flex-direction:column; gap:0.9rem;">
+                    <h3 style="margin:0; font-size:1.12rem; text-transform:uppercase; color:#67e8f9;">Conexión con Firebase (Nube + Caché Offline)</h3>
+                    <p class="text-sm text-muted" style="margin:0;">
+                        Pega aquí los valores de tu App Web de <strong>Firebase</strong> (o edita <code>js/firebase-config.js</code>) para activar
+                        sincronización multiusuario en tiempo real, persistencia offline de Firestore y envío automático de correos de restablecimiento de contraseña.
+                    </p>
+                    <form id="firebaseConfigForm" class="flex flex-col gap-3">
+                        <div class="form-group">
+                            <label class="form-label" for="fbApiKey">apiKey</label>
+                            <input type="text" id="fbApiKey" class="form-control font-mono" placeholder="AIzaSy...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fbAuthDomain">authDomain</label>
+                            <input type="text" id="fbAuthDomain" class="form-control font-mono" placeholder="tu-proyecto.firebaseapp.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fbProjectId">projectId</label>
+                            <input type="text" id="fbProjectId" class="form-control font-mono" placeholder="tu-proyecto-id">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fbStorageBucket">storageBucket</label>
+                            <input type="text" id="fbStorageBucket" class="form-control font-mono" placeholder="tu-proyecto.appspot.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fbMessagingSenderId">messagingSenderId</label>
+                            <input type="text" id="fbMessagingSenderId" class="form-control font-mono" placeholder="123456789012">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="fbAppId">appId</label>
+                            <input type="text" id="fbAppId" class="form-control font-mono" placeholder="1:123456:web:abcdef">
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            <button type="submit" class="btn btn-primary">Guardar Configuración y Recargar</button>
+                            <button type="button" id="btnResetFirebaseCfg" class="btn btn-ghost">Volver a Modo Local Offline</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="glass-panel" style="padding: 1.25rem; display:flex; flex-direction:column; gap:1rem;">
+                    <h3 style="margin:0; font-size:1.12rem; text-transform:uppercase; color:#6ee7b7;">Utilidades y Respaldos</h3>
+                    <div class="info-box">
+                        <strong>Datos Base de LIBRO_INFORMATICA.xlsx:</strong><br>
+                        Los 7 catálogos oficiales ya fueron precargados automáticamente. Si deseas probar reportes, gráficas y descargas de Excel de inmediato, puedes cargar opcionalmente los 25 registros de ejemplo de tu archivo Excel.
+                    </div>
+                    <button type="button" id="btnImportSampleData" class="btn btn-secondary">
+                        Cargar 25 Registros de Muestra (LIBRO_INFORMATICA.xlsx)
+                    </button>
+
+                    <div class="divider-line"></div>
+
+                    <div class="info-box success">
+                        <strong>Respaldo Offline (.json):</strong><br>
+                        Descarga una copia completa de usuarios (sin contraseñas), catálogos, registros e historial de cambios en formato JSON para resguardo local.
+                    </div>
+                    <button type="button" id="btnExportJsonBackup" class="btn btn-success">
+                        Descargar Respaldo Completo (.json)
+                    </button>
+
+                    <div class="divider-line"></div>
+
+                    <div class="text-xs text-muted">
+                        Consulta el archivo <code>README_FIREBASE.md</code> y <code>firestore.rules</code> incluidos en la carpeta del proyecto para configurar paso a paso Firebase Auth y Cloud Firestore.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ======================================================================
+         MODAL: CREAR / EDITAR USUARIO (CONTRASEÑA NUNCA VISIBLE AL EDITAR)
+         ====================================================================== -->
+    <div id="userModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title" id="userModalTitle">Nuevo Usuario</h3>
+                <button type="button" class="modal-close" data-close-modal="userModal">&times;</button>
+            </div>
+            <form id="userForm" class="modal-body flex flex-col gap-3">
+                <input type="hidden" id="usrEditId">
+
+                <div class="flex flex-col items-center gap-2">
+                    <img id="usrPhotoPreview" src="" alt="Foto usuario" class="avatar-lg">
+                    <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                        <span>Subir Fotografía</span>
+                        <input type="file" id="usrPhotoInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="usrFullName">Nombre Completo <span class="req-star">*</span></label>
+                    <input type="text" id="usrFullName" class="form-control" placeholder="Ej. Ing. Luis Ángel Pérez" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="usrUsername">Nombre de Acceso (Usuario) <span class="req-star">*</span></label>
+                    <input type="text" id="usrUsername" class="form-control font-mono" placeholder="Ej. luis.angel" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="usrEmail">Correo Electrónico <span class="req-star">*</span></label>
+                    <input type="email" id="usrEmail" class="form-control" placeholder="usuario@fiscaliamorelos.gob.mx" required>
+                </div>
+
+                <!-- Contraseña inicial SOLO al crear usuario; jamás visible después -->
+                <div id="usrPasswordWrap" class="form-group">
+                    <label class="form-label" for="usrPassword">Contraseña Inicial <span class="req-star">*</span></label>
+                    <input type="password" id="usrPassword" class="form-control" placeholder="Se cifrará automáticamente (no visible después)">
+                    <span class="form-hint">Una vez creado el usuario, nunca podrás ver su contraseña. Solo podrás resetearla por correo.</span>
+                </div>
+
+                <div id="usrActiveWrap" class="form-group hidden">
+                    <label class="flex items-center gap-2 text-sm" style="cursor:pointer;">
+                        <input type="checkbox" id="usrActiveCheck" checked style="width:1rem;height:1rem;accent-color:#22d3ee;">
+                        <span>Cuenta Activa (permitir inicio de sesión)</span>
+                    </label>
+                </div>
+
+                <div id="userFormError" class="info-box danger hidden"></div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal="userModal">Cancelar</button>
+                <button type="button" id="btnSaveUser" class="btn btn-primary">Guardar Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL: RESULTADO DE RESETEO DE CONTRASEÑA POR CORREO
+         ====================================================================== -->
+    <div id="resetResultModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">Reseteo de Contraseña</h3>
+                <button type="button" class="modal-close" data-close-modal="resetResultModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-3" id="resetResultBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal="resetResultModal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL: EDITAR / AUTORIZAR ELEMENTO DE CATÁLOGO
+         ====================================================================== -->
+    <div id="catalogEditModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title" id="catEditModalTitle">Editar y Autorizar Elemento</h3>
+                <button type="button" class="modal-close" data-close-modal="catalogEditModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-3">
+                <input type="hidden" id="catEditId">
+                <div class="form-group">
+                    <label class="form-label" for="catEditValue">Texto Oficial para el Listado</label>
+                    <input type="text" id="catEditValue" class="form-control">
+                </div>
+                <label class="flex items-center gap-2 text-sm" style="cursor:pointer;">
+                    <input type="checkbox" id="catPropagateCheck" checked style="width:1rem;height:1rem;accent-color:#22d3ee;">
+                    <span>Actualizar también los registros existentes que usaron el texto anterior</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal="catalogEditModal">Cancelar</button>
+                <button type="button" id="btnConfirmCatalogEdit" class="btn btn-success">Guardar y Autorizar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL: MI PERFIL DEL ADMINISTRADOR
+         ====================================================================== -->
+    <div id="adminProfileModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">Mi Perfil (Administrador)</h3>
+                <button type="button" class="modal-close" data-close-modal="adminProfileModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-4">
+                <div class="flex flex-col items-center gap-3">
+                    <img id="admProfAvatarPreview" src="" alt="Foto Admin" class="avatar-lg">
+                    <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                        <span>Cambiar Fotografía</span>
+                        <input type="file" id="admProfPhotoInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+                <div class="divider-line"></div>
+                <form id="admProfPwdForm" class="flex flex-col gap-3">
+                    <strong class="text-sm" style="text-transform:uppercase; color:#bfdbfe;">Cambiar Contraseña</strong>
+                    <div class="form-group">
+                        <label class="form-label" for="admCurPwd">Contraseña actual</label>
+                        <input type="password" id="admCurPwd" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="admNewPwd">Nueva contraseña</label>
+                        <input type="password" id="admNewPwd" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="admConfPwd">Confirmar nueva contraseña</label>
+                        <input type="password" id="admConfPwd" class="form-control" required>
+                    </div>
+                    <div id="admPwdMsg" class="info-box hidden"></div>
+                    <button type="submit" class="btn btn-primary w-full">Actualizar Contraseña</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal="adminProfileModal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast -->
+    <div id="toast" class="toast-box">
+        <svg class="svg-icon text-cyan" viewBox="0 0 24 24">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span id="toastMsg" class="text-sm font-bold"></span>
+    </div>
+
+    <!-- Librerías 100% Locales Offline -->
+    <script src="vendor/firebase-app-compat.js"></script>
+    <script src="vendor/firebase-auth-compat.js"></script>
+    <script src="vendor/firebase-firestore-compat.js"></script>
+    <script src="vendor/chart.umd.min.js"></script>
+    <script src="vendor/exceljs.min.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/seed-data.js"></script>
+    <script src="js/ui-common.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/excel-export.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>

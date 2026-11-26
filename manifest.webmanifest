@@ -1,0 +1,10 @@
+{
+    "name": "Registro de Peticiones Informática Forense — FGE Morelos",
+    "short_name": "Registro FGE",
+    "description": "Sistema Offline-First de Registro de Peticiones Periciales de Informática Forense — Fiscalía General del Estado de Morelos.",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#0f172a",
+    "lang": "es-MX"
+}

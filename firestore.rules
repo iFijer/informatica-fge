@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function currentUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isActiveUser() {
+      return isSignedIn() && (
+        !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+        currentUserDoc().data.active != false
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        currentUserDoc().data.role == 'admin' &&
+        currentUserDoc().data.active != false;
+    }
+
+    // Mapeo nombre_de_acceso -> correo para iniciar sesión por usuario
+    match /username_lookup/{usernameLower} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
+    }
+
+    // Perfiles de usuarios (las contraseñas NO viven aquí; están cifradas en Firebase Auth)
+    match /users/{userId} {
+      allow read: if isActiveUser();
+      allow create: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+      allow update: if isAdmin() || (
+        isActiveUser() &&
+        request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.active == resource.data.active
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Catálogos (7 listados + alta manual pendiente de autorización)
+    match /catalog_items/{itemId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser() && (
+        isAdmin() || request.resource.data.status == 'pending'
+      );
+      allow update, delete: if isAdmin();
+    }
+
+    // Contadores consecutivos
+    match /counters/{counterId} {
+      allow read, write: if isActiveUser();
+    }
+
+    // Registros de Peticiones (Inmutables ante borrado; bloqueo estricto de entrega de evidencias)
+    match /records/{recordId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser() &&
+        request.resource.data.createdByUserId == request.auth.uid;
+
+      allow update: if isActiveUser() &&
+        (isAdmin() || resource.data.createdByUserId == request.auth.uid) &&
+        // El número consecutivo jamás puede cambiarse
+        request.resource.data.numero == resource.data.numero &&
+        // Regla estricta: una vez ingresada la Fecha entrega Evidencias, no puede modificarse jamás
+        (!resource.data.fechaEntregaEvidenciasLocked ||
+          request.resource.data.fechaEntregaEvidencias == resource.data.fechaEntregaEvidencias) &&
+        // Regla estricta: una vez ingresado el Custodio/AIC, no puede modificarse jamás
+        (!resource.data.custodioRecibeEvidenciaLocked ||
+          request.resource.data.custodioRecibeEvidencia == resource.data.custodioRecibeEvidencia);
+
+      // Integridad forense: ningún registro se elimina
+      allow delete: if false;
+    }
+
+    // Historial de Cambios (Auditoría estrictamente inmutable: solo agregar)
+    match /audit_logs/{logId} {
+      allow read: if isActiveUser();
+      allow create: if isActiveUser() &&
+        request.resource.data.editedByUserId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

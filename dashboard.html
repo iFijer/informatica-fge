@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard de Registro de Peticiones de Informática Forense — FGE Morelos.">
+    <meta name="author" content="Isaí Figueroa J.">
+    <title>Dashboard — Registro de Peticiones Informática Forense | FGE Morelos</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Fondo animado de partículas idéntico al index.html de referencia -->
+    <canvas id="network-canvas"></canvas>
+
+    <!-- BOTÓN SUPERIOR IZQUIERDO: INICIO -->
+    <a href="index.html" class="btn-inicio" title="Volver al Inicio / Acceso">
+        <svg class="svg-icon text-cyan" style="width: 1.25em; height: 1.25em;" viewBox="0 0 24 24">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Inicio</span>
+    </a>
+
+    <!-- LOGO SUPERIOR DERECHO: FISCALÍA GENERAL DEL ESTADO DE MORELOS -->
+    <div id="fgeLogoSlot" class="logo-fge" title="Fiscalía General del Estado de Morelos"></div>
+
+    <main class="page-shell">
+        <!-- ENCABEZADO INSTITUCIONAL -->
+        <header class="page-header">
+            <div class="header-icon-box">
+                <svg style="width: 2.25rem; height: 2.25rem; color: #ffffff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="9" rx="1" fill="rgba(255,255,255,0.16)"/>
+                    <rect x="14" y="3" width="7" height="5" rx="1" fill="rgba(255,255,255,0.16)"/>
+                    <rect x="14" y="12" width="7" height="9" rx="1" fill="rgba(255,255,255,0.16)"/>
+                    <rect x="3" y="16" width="7" height="5" rx="1" fill="rgba(255,255,255,0.16)"/>
+                </svg>
+                <span class="animate-ping" style="position:absolute; width:0.625rem; height:0.625rem; border-radius:9999px; top:6px; right:6px; background-color:#f87171;"></span>
+                <span style="position:absolute; width:0.625rem; height:0.625rem; border-radius:9999px; top:6px; right:6px; background-color:#ef4444; border:1px solid rgba(255,255,255,0.6);"></span>
+            </div>
+            <h1 class="title-gradient">DASHBOARD — REGISTRO DE PETICIONES INFORMÁTICA</h1>
+            <h2>
+                Fiscalía General del Estado de Morelos ·
+                <a class="u-link" href="http://www.isaifijer.com.mx" target="_blank" rel="noopener noreferrer">Isaí Figueroa J.</a>
+            </h2>
+        </header>
+
+        <!-- BARRA DE USUARIO Y ACCIONES PRINCIPALES -->
+        <section class="glass-panel user-toolbar">
+            <div class="user-identity">
+                <img id="navUserAvatar" src="" alt="Fotografía de perfil" class="avatar-circle">
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <strong id="navUserFullName" style="font-size:1.1rem;">Cargando...</strong>
+                        <span id="navUserRoleBadge" class="badge badge-cyan">Usuario</span>
+                        <span id="connectionStatusPill" class="status-pill local">
+                            <span class="dot"></span><span>Offline Local</span>
+                        </span>
+                    </div>
+                    <div class="text-xs text-muted font-mono" id="navUserSub">—</div>
+                </div>
+            </div>
+
+            <div class="toolbar-actions">
+                <button type="button" id="btnOpenAddModal" class="btn btn-primary">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>AGREGAR</span>
+                </button>
+                <button type="button" id="btnOpenReportModal" class="btn btn-success">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <span>Mi Informe y Gráficas</span>
+                </button>
+                <button type="button" id="btnOpenProfileModal" class="btn btn-secondary">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Mi Perfil</span>
+                </button>
+                <a href="admin.html" id="btnGoAdmin" class="btn btn-warning hidden">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>Panel Admin</span>
+                </a>
+                <button type="button" id="btnLogout" class="btn btn-danger btn-sm">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    <span>Salir</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- TARJETAS KPI RESUMEN -->
+        <section class="kpi-grid">
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Registros en Vista</div>
+                    <div id="kpiTotal" class="kpi-value text-cyan">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(6,182,212,0.16); color:#22d3ee;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Dictámenes / Informes</div>
+                    <div id="kpiEntregados" class="kpi-value text-emerald">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(16,185,129,0.16); color:#34d399;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Pendientes</div>
+                    <div id="kpiPendientes" class="kpi-value text-amber">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(245,158,11,0.16); color:#fbbf24;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div>
+                    <div class="kpi-label">Entrega Evid. Pendiente</div>
+                    <div id="kpiSinEvidenciaEntrega" class="kpi-value" style="color:#93c5fd;">0</div>
+                </div>
+                <div class="kpi-icon" style="background:rgba(59,130,246,0.18); color:#60a5fa;">
+                    <svg class="svg-icon" style="width:1.5rem;height:1.5rem;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- BARRA DE CONTROL: SWITCH MIS REGISTROS / TODOS LOS USUARIOS + FILTROS -->
+        <section class="glass-panel controls-bar">
+            <div class="filters-group">
+                <label class="toggle-switch-wrap" title="Vista principal: tus registros. Activa para ver el contenido de todos los usuarios.">
+                    <input type="checkbox" id="toggleShowAllUsers">
+                    <span class="switch-track"></span>
+                    <span class="text-sm font-bold" id="toggleScopeLabel">Vista: Mis Registros</span>
+                </label>
+
+                <div class="search-box">
+                    <svg class="svg-icon search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="filterSearch" class="form-control" placeholder="Buscar folio, llamado, carpeta, MP, perito...">
+                </div>
+
+                <select id="filterFiscalia" class="form-control" style="width:auto; min-width:175px;">
+                    <option value="">Todas las Fiscalías</option>
+                </select>
+
+                <select id="filterEvidencia" class="form-control" style="width:auto; min-width:130px;">
+                    <option value="">Evidencia: Todas</option>
+                </select>
+
+                <select id="filterEntrega" class="form-control" style="width:auto; min-width:155px;">
+                    <option value="">Entrega: Todas</option>
+                </select>
+
+                <button type="button" id="btnClearFilters" class="btn btn-ghost btn-sm">Limpiar</button>
+            </div>
+
+            <div class="text-xs text-muted font-mono" id="tableCountInfo">0 registros</div>
+        </section>
+
+        <!-- TABLA PRINCIPAL DE REGISTROS (NUEVOS SIEMPRE HASTA ARRIBA) -->
+        <section class="glass-panel" style="padding: 1rem;">
+            <div class="table-container" style="max-height: 64vh; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center;">NUM</th>
+                            <th>LLAMADO</th>
+                            <th>PERITO</th>
+                            <th>FECHA INGRESO</th>
+                            <th>CARPETA DE INVESTIGACIÓN</th>
+                            <th>FISCALÍA</th>
+                            <th>MINISTERIO PÚBLICO</th>
+                            <th>QUÉ PERICIAL SOLICITA (EVIDENCIA)</th>
+                            <th style="text-align:center;">EVIDENCIA</th>
+                            <th>FECHA ENTREGA</th>
+                            <th>RECEPTOR</th>
+                            <th>QUÉ SE ENTREGÓ</th>
+                            <th>OBSERVACIONES</th>
+                            <th>FECHA ENTREGA EVIDENCIAS</th>
+                            <th>CUSTODIO / AIC QUE RECIBE</th>
+                            <th>USUARIO</th>
+                            <th style="text-align:center;">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody">
+                        <tr>
+                            <td colspan="17" class="empty-state">Cargando registros...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- ======================================================================
+         MODAL 1: AGREGAR NUEVO REGISTRO (2 PASOS: CAPTURA -> VALIDACIÓN PREVIA)
+         ====================================================================== -->
+    <div id="addRecordModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-xl">
+            <div class="modal-header">
+                <h3 class="modal-title" id="addModalTitle">
+                    <svg class="svg-icon text-cyan" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span>Nuevo Registro de Petición</span>
+                </h3>
+                <button type="button" class="modal-close" data-close-modal="addRecordModal">&times;</button>
+            </div>
+
+            <!-- PASO 1: FORMULARIO DE LAS 15 COLUMNAS -->
+            <div id="addStepForm" class="modal-body">
+                <div class="info-box mb-3">
+                    <strong>Nota:</strong> Los campos con <span class="req-star">*</span> son obligatorios.
+                    Si un valor de listado no existe, escríbelo y selecciónalo con <strong>"+ Agregar a la lista"</strong>
+                    (quedará adjunto y pendiente de autorización por el administrador).
+                </div>
+
+                <div class="form-grid-3">
+                    <!-- 1. Número -->
+                    <div class="form-group">
+                        <label class="form-label" for="addNumero">
+                            <span>1. Número <span class="req-star">*</span></span>
+                            <span class="badge badge-cyan" style="font-size:0.64rem;">Auto</span>
+                        </label>
+                        <input type="text" id="addNumero" class="form-control font-mono font-bold" readonly>
+                    </div>
+
+                    <!-- 2. Llamado -->
+                    <div class="form-group">
+                        <label class="form-label" for="addLlamado">
+                            <span>2. Llamado <span class="req-star">*</span></span>
+                            <span class="opt-tag">Manual</span>
+                        </label>
+                        <input type="text" id="addLlamado" class="form-control" placeholder="Ej. FM-8608/26">
+                    </div>
+
+                    <!-- 3. Perito (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>3. Perito <span class="req-star">*</span></span>
+                            <span class="opt-tag">Listado</span>
+                        </label>
+                        <div id="comboAddPerito"></div>
+                    </div>
+
+                    <!-- 4. Fecha de ingreso -->
+                    <div class="form-group">
+                        <label class="form-label" for="addFechaIngreso">
+                            <span>4. Fecha de ingreso <span class="req-star">*</span></span>
+                            <span class="opt-tag">Calendario</span>
+                        </label>
+                        <input type="date" id="addFechaIngreso" class="form-control">
+                    </div>
+
+                    <!-- 5. Carpeta de investigación -->
+                    <div class="form-group">
+                        <label class="form-label" for="addCarpeta">
+                            <span>5. Carpeta de investigación <span class="req-star">*</span></span>
+                            <span class="opt-tag">Manual</span>
+                        </label>
+                        <input type="text" id="addCarpeta" class="form-control" placeholder="Ej. SC01/2337/2026">
+                    </div>
+
+                    <!-- 6. Fiscalía (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>6. Fiscalía <span class="req-star">*</span></span>
+                            <span class="opt-tag">Listado</span>
+                        </label>
+                        <div id="comboAddFiscalia"></div>
+                    </div>
+
+                    <!-- 7. Ministerio Público (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>7. Ministerio Público <span class="req-star">*</span></span>
+                            <span class="opt-tag">Listado</span>
+                        </label>
+                        <div id="comboAddMP"></div>
+                    </div>
+
+                    <!-- 8. Qué pericial solicita (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>8. Qué pericial solicita (evidencia) <span class="req-star">*</span></span>
+                            <span class="opt-tag">Listado</span>
+                        </label>
+                        <div id="comboAddPericial"></div>
+                    </div>
+
+                    <!-- 9. Evidencia (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>9. Evidencia <span class="req-star">*</span></span>
+                            <span class="opt-tag">SI / NO / F</span>
+                        </label>
+                        <div id="comboAddEvidencia"></div>
+                    </div>
+
+                    <!-- 10. Fecha de entrega (No obligatorio) -->
+                    <div class="form-group">
+                        <label class="form-label" for="addFechaEntrega">
+                            <span>10. Fecha de entrega (Dictamen)</span>
+                            <span class="opt-tag">Opcional</span>
+                        </label>
+                        <input type="date" id="addFechaEntrega" class="form-control">
+                    </div>
+
+                    <!-- 11. Receptor (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>11. Receptor <span class="req-star">*</span></span>
+                            <span class="opt-tag">Listado</span>
+                        </label>
+                        <div id="comboAddReceptor"></div>
+                    </div>
+
+                    <!-- 12. Qué se entregó (Listado) -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>12. Qué se entregó <span class="req-star">*</span></span>
+                            <span class="opt-tag">Listado</span>
+                        </label>
+                        <div id="comboAddQueSeEntrego"></div>
+                    </div>
+
+                    <!-- 13. Observaciones (Manual, Obligatorio) -->
+                    <div class="form-group col-span-full">
+                        <label class="form-label" for="addObservaciones">
+                            <span>13. Observaciones <span class="req-star">*</span></span>
+                            <span class="opt-tag">Manual obligatorio</span>
+                        </label>
+                        <textarea id="addObservaciones" class="form-control" placeholder="Detalla observaciones, hallazgos o motivo de estatus..."></textarea>
+                    </div>
+
+                    <!-- 14. Fecha entrega Evidencias (Opcional, bloqueo definitivo) -->
+                    <div class="form-group">
+                        <label class="form-label" for="addFechaEvidencias">
+                            <span>14. Fecha entrega Evidencias</span>
+                            <span class="lock-tag">Opcional · Bloqueo definitivo</span>
+                        </label>
+                        <input type="date" id="addFechaEvidencias" class="form-control">
+                        <span class="form-hint">Puedes dejarla vacía y llenarla después. Una vez ingresada ya no se podrá modificar.</span>
+                    </div>
+
+                    <!-- 15. Custodio / AIC que recibe evidencia (Opcional, bloqueo definitivo) -->
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="form-label" for="addCustodio">
+                            <span>15. Custodio / AIC que recibe evidencia</span>
+                            <span class="lock-tag">Opcional · Bloqueo definitivo</span>
+                        </label>
+                        <input type="text" id="addCustodio" class="form-control" placeholder="Nombre del Custodio o Agente de Investigación Criminal (AIC)">
+                        <span class="form-hint">Puedes dejarlo vacío y completarlo después. Una vez ingresado ya no se podrá modificar.</span>
+                    </div>
+                </div>
+
+                <div id="addFormError" class="info-box danger mt-3 hidden"></div>
+            </div>
+
+            <!-- PASO 2: PANTALLA DE VALIDACIÓN PREVIA ANTES DE GUARDAR -->
+            <div id="addStepConfirm" class="modal-body hidden">
+                <div class="confirm-banner">
+                    <svg class="svg-icon text-amber" style="width:1.45rem;height:1.45rem;margin-top:2px;" viewBox="0 0 24 24">
+                        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <div>
+                        <strong>¿Confirmas que toda la información es correcta?</strong><br>
+                        Una vez guardado, el registro quedará <strong>bloqueado</strong>. Si requieres corregir un campo obligatorio después, la corrección quedará registrada permanentemente en el <strong>Historial de Cambios</strong>.
+                        Los campos de <strong>Entrega de Evidencias</strong> que contengan datos quedarán <strong>bloqueados definitivamente</strong>.
+                    </div>
+                </div>
+                <div id="addConfirmSummaryGrid" class="summary-grid"></div>
+            </div>
+
+            <div class="modal-footer" id="addStepFormFooter">
+                <button type="button" class="btn btn-ghost" data-close-modal="addRecordModal">Cancelar</button>
+                <button type="button" id="btnValidateBeforeSave" class="btn btn-primary">
+                    Revisar y Validar Información →
+                </button>
+            </div>
+
+            <div class="modal-footer hidden" id="addStepConfirmFooter">
+                <button type="button" id="btnBackToAddForm" class="btn btn-secondary">← Volver a Corregir</button>
+                <button type="button" id="btnConfirmSaveRecord" class="btn btn-success">
+                    ✓ Confirmar y Guardar Registro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL 2: COMPLETAR ENTREGA DE EVIDENCIAS (UNA SOLA VEZ -> BLOQUEO DEFINITIVO)
+         ====================================================================== -->
+    <div id="evidenceModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg class="svg-icon text-emerald" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    <span>Entrega de Evidencias — Folio #<span id="evModalNum"></span></span>
+                </h3>
+                <button type="button" class="modal-close" data-close-modal="evidenceModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-3">
+                <div class="confirm-banner" style="margin-bottom:0.25rem;">
+                    <span>
+                        <strong>Importante:</strong> Una vez ingresada la fecha de entrega de evidencias o el Custodio / AIC,
+                        <strong>ya no podrán modificarse jamás</strong>. Verifica los datos antes de confirmar.
+                    </span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="evFechaInput">
+                        <span>Fecha entrega Evidencias</span>
+                        <span id="evFechaLockBadge" class="lock-tag hidden">🔒 Bloqueado</span>
+                    </label>
+                    <input type="date" id="evFechaInput" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="evCustodioInput">
+                        <span>Custodio / AIC que recibe evidencia</span>
+                        <span id="evCustodioLockBadge" class="lock-tag hidden">🔒 Bloqueado</span>
+                    </label>
+                    <input type="text" id="evCustodioInput" class="form-control" placeholder="Nombre del Custodio o AIC">
+                </div>
+                <label class="flex items-center gap-2 text-sm" style="cursor:pointer;">
+                    <input type="checkbox" id="evConfirmCheck" style="width:1rem;height:1rem;accent-color:#10b981;">
+                    <span>Confirmo que los datos de entrega son correctos y entiendo que se bloquearán permanentemente.</span>
+                </label>
+                <div id="evModalError" class="info-box danger hidden"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal="evidenceModal">Cancelar</button>
+                <button type="button" id="btnSaveEvidenceDelivery" class="btn btn-success">Guardar y Bloquear</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL 3: CORREGIR CAMPOS OBLIGATORIOS (REGISTRA EN HISTORIAL DE CAMBIOS)
+         ====================================================================== -->
+    <div id="correctModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-xl">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg class="svg-icon text-amber" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    <span>Corregir Registro #<span id="corrModalNum"></span> (Con Historial de Cambios)</span>
+                </h3>
+                <button type="button" class="modal-close" data-close-modal="correctModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-3">
+                <div class="info-box warning">
+                    <strong>Auditoría obligatoria:</strong> Todo cambio que realices aquí quedará guardado de forma inmutable en el
+                    <strong>Historial de Cambios</strong> (usuario, fecha/hora, valor anterior, valor nuevo y motivo).
+                    Los campos de <strong>Entrega de Evidencias</strong> no se pueden modificar desde aquí.
+                </div>
+
+                <div class="form-grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Llamado <span class="req-star">*</span></label>
+                        <input type="text" id="corrLlamado" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Perito <span class="req-star">*</span></label>
+                        <div id="comboCorrPerito"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de ingreso <span class="req-star">*</span></label>
+                        <input type="date" id="corrFechaIngreso" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Carpeta de investigación <span class="req-star">*</span></label>
+                        <input type="text" id="corrCarpeta" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fiscalía <span class="req-star">*</span></label>
+                        <div id="comboCorrFiscalia"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ministerio Público <span class="req-star">*</span></label>
+                        <div id="comboCorrMP"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Qué pericial solicita <span class="req-star">*</span></label>
+                        <div id="comboCorrPericial"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Evidencia <span class="req-star">*</span></label>
+                        <div id="comboCorrEvidencia"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de entrega (Dictamen)</label>
+                        <input type="date" id="corrFechaEntrega" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Receptor <span class="req-star">*</span></label>
+                        <div id="comboCorrReceptor"></div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Qué se entregó <span class="req-star">*</span></label>
+                        <div id="comboCorrQueSeEntrego"></div>
+                    </div>
+                    <div class="form-group col-span-full">
+                        <label class="form-label">Observaciones <span class="req-star">*</span></label>
+                        <textarea id="corrObservaciones" class="form-control"></textarea>
+                    </div>
+                    <div class="form-group col-span-full">
+                        <label class="form-label" for="corrReason">
+                            <span>Motivo de la corrección (se registrará en auditoría) <span class="req-star">*</span></span>
+                        </label>
+                        <textarea id="corrReason" class="form-control" placeholder="Explica brevemente el motivo de la corrección (ej. Error de captura en número de carpeta o actualización de dictamen entregado)..."></textarea>
+                    </div>
+                </div>
+                <div id="corrModalError" class="info-box danger hidden"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal="correctModal">Cancelar</button>
+                <button type="button" id="btnApplyCorrection" class="btn btn-warning">Registrar Corrección en Historial</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL 4: HISTORIAL DE CAMBIOS DEL REGISTRO
+         ====================================================================== -->
+    <div id="historyModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg class="svg-icon text-cyan" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span>Historial de Cambios — Folio #<span id="histModalNum"></span></span>
+                </h3>
+                <button type="button" class="modal-close" data-close-modal="historyModal">&times;</button>
+            </div>
+            <div class="modal-body" id="historyModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close-modal="historyModal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL 5: MI INFORME Y GRÁFICAS (CON EXPORTACIÓN A EXCEL + GRÁFICAS)
+         ====================================================================== -->
+    <div id="reportModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-xl">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg class="svg-icon text-emerald" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <span id="reportModalHeading">Mi Informe Estadístico y Gráficas</span>
+                </h3>
+                <button type="button" class="modal-close" data-close-modal="reportModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-4">
+                <!-- Filtros del informe -->
+                <div class="glass-panel" style="padding: 1rem;">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <div class="form-group">
+                                <label class="form-label" for="repDateFrom">Fecha Ingreso Desde</label>
+                                <input type="date" id="repDateFrom" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="repDateTo">Fecha Ingreso Hasta</label>
+                                <input type="date" id="repDateTo" class="form-control">
+                            </div>
+                            <!-- Selector de alcance exclusivo si el usuario es Admin -->
+                            <div id="repAdminScopeBox" class="form-group hidden">
+                                <label class="form-label" for="repAdminScope">Alcance (Solo Admin)</label>
+                                <select id="repAdminScope" class="form-control">
+                                    <option value="mine">Solo mis registros</option>
+                                    <option value="all">Todos los usuarios</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="btnRefreshReport" class="btn btn-secondary btn-sm">Actualizar Gráficas</button>
+                            <button type="button" id="btnExportReportExcel" class="btn btn-success">
+                                <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span>Exportar Informe + Gráficas (.xlsx)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="form-label mb-2">Columnas incluidas en gráficas del informe:</div>
+                        <div id="reportDimensionCheckboxes" class="user-checklist"></div>
+                    </div>
+                </div>
+
+                <!-- KPIs del informe -->
+                <div id="reportKpiStrip" class="kpi-grid"></div>
+
+                <!-- Gráficas interactivas -->
+                <div id="reportChartsGrid" class="charts-grid"></div>
+            </div>
+            <div class="modal-footer">
+                <span id="reportScopeNote" class="text-xs text-muted" style="margin-right:auto;"></span>
+                <button type="button" class="btn btn-secondary" data-close-modal="reportModal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================================
+         MODAL 6: MI PERFIL (ACTUALIZAR FOTOGRAFÍA Y CONTRASEÑA)
+         ====================================================================== -->
+    <div id="profileModal" class="modal-backdrop">
+        <div class="glass-panel-strong modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <svg class="svg-icon text-cyan" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Mi Perfil</span>
+                </h3>
+                <button type="button" class="modal-close" data-close-modal="profileModal">&times;</button>
+            </div>
+            <div class="modal-body flex flex-col gap-4">
+                <!-- Foto de perfil -->
+                <div class="flex flex-col items-center gap-3">
+                    <img id="profileAvatarPreview" src="" alt="Mi Fotografía" class="avatar-lg">
+                    <div class="text-center">
+                        <strong id="profileNameLabel" style="font-size:1.1rem;"></strong>
+                        <div id="profileEmailLabel" class="text-xs text-muted font-mono"></div>
+                    </div>
+                    <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
+                        <span>Cambiar Fotografía</span>
+                        <input type="file" id="profilePhotoInput" accept="image/*" class="hidden">
+                    </label>
+                </div>
+
+                <div class="divider-line"></div>
+
+                <!-- Cambio de contraseña -->
+                <form id="profilePasswordForm" class="flex flex-col gap-3">
+                    <strong class="text-sm" style="text-transform:uppercase; letter-spacing:0.05em; color:#bfdbfe;">Actualizar Contraseña</strong>
+                    <div class="form-group">
+                        <label class="form-label" for="profCurrentPwd">Contraseña actual</label>
+                        <input type="password" id="profCurrentPwd" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="profNewPwd">Nueva contraseña</label>
+                        <input type="password" id="profNewPwd" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="profConfirmPwd">Confirmar nueva contraseña</label>
+                        <input type="password" id="profConfirmPwd" class="form-control" required>
+                    </div>
+                    <div id="profilePwdMsg" class="info-box hidden"></div>
+                    <button type="submit" class="btn btn-primary w-full">Guardar Nueva Contraseña</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal="profileModal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast -->
+    <div id="toast" class="toast-box">
+        <svg class="svg-icon text-cyan" viewBox="0 0 24 24">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span id="toastMsg" class="text-sm font-bold"></span>
+    </div>
+
+    <!-- Librerías 100% Locales Offline -->
+    <script src="vendor/firebase-app-compat.js"></script>
+    <script src="vendor/firebase-auth-compat.js"></script>
+    <script src="vendor/firebase-firestore-compat.js"></script>
+    <script src="vendor/chart.umd.min.js"></script>
+    <script src="vendor/exceljs.min.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/seed-data.js"></script>
+    <script src="js/ui-common.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/excel-export.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
