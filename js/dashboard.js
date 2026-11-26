@@ -195,9 +195,9 @@
                     <td>${esc(r.pericialSolicita)}</td>
                     <td style="text-align:center;">${window.FGEUI.renderEvidenciaBadge(r.evidencia)}</td>
                     <td class="font-mono" style="white-space:nowrap;">${esc(window.FGEUI.formatDateDisplay(r.fechaEntrega))}</td>
-                    <td>${esc(r.receptor)}</td>
+                    <td>${r.receptor ? esc(r.receptor) : '<span class="text-muted">—</span>'}</td>
                     <td>${window.FGEUI.renderEntregaBadge(r.queSeEntrego)}</td>
-                    <td class="cell-obs">${esc(r.observaciones)}</td>
+                    <td class="cell-obs">${r.observaciones ? esc(r.observaciones) : '<span class="text-muted">—</span>'}</td>
                     <td class="font-mono" style="white-space:nowrap;">
                         ${r.fechaEntregaEvidencias
                             ? `<span class="text-emerald font-bold" title="Bloqueado definitivamente">🔒 ${esc(window.FGEUI.formatDateDisplay(r.fechaEntregaEvidencias))}</span>`
@@ -303,10 +303,7 @@
             { val: payload.fiscalia,             combo: addCombos.fiscalias,                      name: 'Fiscalía' },
             { val: payload.ministerioPublico,    combo: addCombos.ministerios_publicos,           name: 'Ministerio Público' },
             { val: payload.pericialSolicita,     combo: addCombos.pericial_solicita,              name: 'Qué pericial solicita (evidencia)' },
-            { val: payload.evidencia,            combo: addCombos.evidencias,                     name: 'Evidencia' },
-            { val: payload.receptor,             combo: addCombos.receptores,                     name: 'Receptor' },
-            { val: payload.queSeEntrego,         combo: addCombos.que_se_entrego,                 name: 'Qué se entregó' },
-            { val: payload.observaciones,        el: document.getElementById('addObservaciones'), name: 'Observaciones' }
+            { val: payload.evidencia,            combo: addCombos.evidencias,                     name: 'Evidencia' }
         ];
 
         const missing = [];
@@ -343,9 +340,9 @@
             ['8. Qué pericial solicita (evidencia)', payload.pericialSolicita.toUpperCase()],
             ['9. Evidencia', payload.evidencia.toUpperCase()],
             ['10. Fecha de entrega (Dictamen)', payload.fechaEntrega ? window.FGEUI.formatDateDisplay(payload.fechaEntrega) : 'Sin capturar (opcional)'],
-            ['11. Receptor', payload.receptor.toUpperCase()],
-            ['12. Qué se entregó', payload.queSeEntrego.toUpperCase()],
-            ['13. Observaciones', payload.observaciones.toUpperCase()],
+            ['11. Receptor', payload.receptor ? payload.receptor.toUpperCase() : 'Sin capturar (opcional)'],
+            ['12. Qué se entregó', payload.queSeEntrego ? payload.queSeEntrego.toUpperCase() : 'Sin capturar (opcional)'],
+            ['13. Observaciones', payload.observaciones ? payload.observaciones.toUpperCase() : 'Sin capturar (opcional)'],
             ['14. Fecha entrega Evidencias', payload.fechaEntregaEvidencias ? `🔒 ${window.FGEUI.formatDateDisplay(payload.fechaEntregaEvidencias)} (Se bloqueará definitivamente)` : 'Vacío (editable después una sola vez)'],
             ['15. Custodio / AIC que recibe', payload.custodioRecibeEvidencia ? `🔒 ${payload.custodioRecibeEvidencia.toUpperCase()} (Se bloqueará definitivamente)` : 'Vacío (editable después una sola vez)']
         ];

@@ -10,6 +10,10 @@
     let auditList = [];
     let activeCatalogKey = 'ministerios_publicos';
     let pendingUserPhotoDataUrl = undefined;
+    let alertedPendingIds = new Set();
+    let newlyArrivedPendingIds = new Set();
+    let reopenAlertAfterEdit = false;
+    let unsubscribePendingCatalogs = null;
 
     async function bootstrapAdmin() {
         adminUser = await window.FGEDB.requireSession({ adminOnly: true });
@@ -21,6 +25,25 @@
         loadFirebaseConfigForm();
         bindEvents();
         await reloadAll();
+
+        // Al abrir el panel, si existen campos nuevos pendientes en listados, mostrar alerta de inmediato
+        if (catalogsState.pendingItems.length > 0) {
+            catalogsState.pendingItems.forEach(it => alertedPendingIds.add(it.id));
+            openPendingCatalogAlertModal();
+        }
+        startPendingCatalogAlertsListener();
+    }
+
+    function switchToAdminTab(targetTabId) {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('data-tab') === targetTabId);
+        });
+        document.querySelectorAll('.tab-panel').forEach(p => {
+            p.classList.toggle('active', p.id === targetTabId);
+        });
+        if (targetTabId === 'tabReports') {
+            setTimeout(renderAdminCharts, 40);
+        }
     }
 
     function renderAdminHeader() {
@@ -53,18 +76,122 @@
     }
 
     function renderTopStats() {
+        const pendingCount = catalogsState.pendingItems.length;
         document.getElementById('statUsersCount').textContent = usersList.length;
         document.getElementById('statRecordsCount').textContent = recordsList.length;
-        document.getElementById('statPendingCatalogs').textContent = catalogsState.pendingItems.length;
+        document.getElementById('statPendingCatalogs').textContent = pendingCount;
         document.getElementById('statAuditCount').textContent = auditList.length;
 
         const badge = document.getElementById('tabPendingBadge');
-        if (catalogsState.pendingItems.length > 0) {
-            badge.textContent = catalogsState.pendingItems.length;
+        if (pendingCount > 0) {
+            badge.textContent = pendingCount;
             badge.classList.remove('hidden');
         } else {
             badge.classList.add('hidden');
         }
+
+        const banner = document.getElementById('pendingCatalogAlertBanner');
+        const bannerText = document.getElementById('pendingAlertBannerText');
+        if (banner && bannerText) {
+            if (pendingCount > 0) {
+                bannerText.textContent = pendingCount === 1
+                    ? 'Se subió 1 nuevo campo a los listados pendiente de editar o aceptar.'
+                    : `Hay ${pendingCount} nuevos campos en los listados pendientes de editar o aceptar.`;
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        const alertModal = document.getElementById('pendingCatalogAlertModal');
+        if (alertModal && alertModal.classList.contains('open')) {
+            if (pendingCount > 0) {
+                renderPendingAlertModalList();
+            } else {
+                window.FGEUI.closeModal('pendingCatalogAlertModal');
+            }
+        }
+    }
+
+    function renderPendingAlertModalList() {
+        const listEl = document.getElementById('pendingAlertList');
+        if (!listEl) return;
+        const esc = window.FGEUI.escapeHtml;
+        const meta = window.FGE_SEED.CATALOG_META;
+        const pending = [...catalogsState.pendingItems].sort((a, b) =>
+            String(b.createdAt || '').localeCompare(String(a.createdAt || ''))
+        );
+
+        if (pending.length === 0) {
+            listEl.innerHTML = `<div class="info-box success">Todos los campos pendientes ya fueron revisados.</div>`;
+            return;
+        }
+
+        listEl.innerHTML = pending.map((it) => {
+            const catLabel = (meta.find(m => m.key === it.category) || {}).label || it.category;
+            const isFresh = newlyArrivedPendingIds.has(it.id);
+            return `
+                <div class="catalog-item-row pending">
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="badge badge-amber">${esc(catLabel)}</span>
+                            ${isFresh ? '<span class="badge badge-cyan" style="font-size:0.64rem;">NUEVO</span>' : ''}
+                            <strong style="font-size:1rem;">${esc(it.value)}</strong>
+                        </div>
+                        <div class="text-xs text-muted mt-1">
+                            Subido por <strong>${esc(it.addedByName || 'Usuario')}</strong> · ${esc(window.FGEUI.formatDateTimeDisplay(it.createdAt))}
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-success btn-sm" data-cat-act="approve" data-from-alert="1" data-id="${esc(it.id)}">✓ Aceptar</button>
+                        <button type="button" class="btn btn-warning btn-sm" data-cat-act="edit" data-from-alert="1" data-id="${esc(it.id)}">Editar y Aceptar</button>
+                        <button type="button" class="btn btn-danger btn-sm" data-cat-act="reject" data-from-alert="1" data-id="${esc(it.id)}">Rechazar</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function openPendingCatalogAlertModal() {
+        renderPendingAlertModalList();
+        window.FGEUI.openModal('pendingCatalogAlertModal');
+    }
+
+    function startPendingCatalogAlertsListener() {
+        if (typeof window.FGEDB.subscribePendingCatalogs !== 'function') return;
+        if (unsubscribePendingCatalogs) {
+            try { unsubscribePendingCatalogs(); } catch (e) { /* noop */ }
+        }
+        const meta = window.FGE_SEED.CATALOG_META;
+        unsubscribePendingCatalogs = window.FGEDB.subscribePendingCatalogs(async (pendingItems) => {
+            const freshItems = (pendingItems || []).filter(it => !alertedPendingIds.has(it.id));
+            try {
+                catalogsState = await window.FGEDB.getCatalogs();
+                renderTopStats();
+                renderCatalogsUI();
+            } catch (e) { /* noop */ }
+
+            if (freshItems.length > 0) {
+                freshItems.forEach((it) => {
+                    alertedPendingIds.add(it.id);
+                    newlyArrivedPendingIds.add(it.id);
+                });
+                if (freshItems.length === 1) {
+                    const it = freshItems[0];
+                    const catLabel = (meta.find(m => m.key === it.category) || {}).label || it.category;
+                    window.FGEUI.showToast(`Nuevo campo en "${catLabel}": "${it.value}". Revisa para editar o aceptar.`, 'warning');
+                } else {
+                    window.FGEUI.showToast(`Se subieron ${freshItems.length} nuevos campos a los listados pendientes de revisar.`, 'warning');
+                }
+                openPendingCatalogAlertModal();
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (unsubscribePendingCatalogs) {
+                try { unsubscribePendingCatalogs(); } catch (e) { /* noop */ }
+            }
+        });
     }
 
     // ======================================================================
@@ -518,9 +645,9 @@
                     <td>${esc(r.pericialSolicita)}</td>
                     <td style="text-align:center;">${window.FGEUI.renderEvidenciaBadge(r.evidencia)}</td>
                     <td class="font-mono" style="white-space:nowrap;">${esc(window.FGEUI.formatDateDisplay(r.fechaEntrega))}</td>
-                    <td>${esc(r.receptor)}</td>
+                    <td>${r.receptor ? esc(r.receptor) : '<span class="text-muted">—</span>'}</td>
                     <td>${window.FGEUI.renderEntregaBadge(r.queSeEntrego)}</td>
-                    <td class="cell-obs">${esc(r.observaciones)}</td>
+                    <td class="cell-obs">${r.observaciones ? esc(r.observaciones) : '<span class="text-muted">—</span>'}</td>
                     <td class="font-mono" style="white-space:nowrap;">${r.fechaEntregaEvidencias ? '🔒 ' + esc(window.FGEUI.formatDateDisplay(r.fechaEntregaEvidencias)) : '—'}</td>
                     <td>${r.custodioRecibeEvidencia ? '🔒 ' + esc(r.custodioRecibeEvidencia) : '—'}</td>
                     <td><span class="badge badge-cyan" style="font-size:0.68rem;">${esc(r.createdByName || r.createdByUsername)}</span></td>
@@ -585,20 +712,49 @@
         // Pestañas
         document.querySelectorAll('.tab-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
-                const target = btn.getAttribute('data-tab');
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(target).classList.add('active');
-                if (target === 'tabReports') {
-                    setTimeout(renderAdminCharts, 40);
-                }
+                switchToAdminTab(btn.getAttribute('data-tab'));
             });
         });
 
+        // Alerta de nuevos campos en listados (KPI, banner y modal)
+        const kpiPendingCard = document.getElementById('kpiPendingCatalogsCard');
+        if (kpiPendingCard) {
+            kpiPendingCard.addEventListener('click', () => {
+                if (catalogsState.pendingItems.length > 0) {
+                    openPendingCatalogAlertModal();
+                } else {
+                    switchToAdminTab('tabCatalogs');
+                }
+            });
+        }
+        const btnOpenAlert = document.getElementById('btnOpenPendingAlertModal');
+        if (btnOpenAlert) {
+            btnOpenAlert.addEventListener('click', openPendingCatalogAlertModal);
+        }
+        const btnBannerGo = document.getElementById('btnBannerGoCatalogs');
+        if (btnBannerGo) {
+            btnBannerGo.addEventListener('click', () => switchToAdminTab('tabCatalogs'));
+        }
+        const btnAlertGoTab = document.getElementById('btnAlertGoCatalogsTab');
+        if (btnAlertGoTab) {
+            btnAlertGoTab.addEventListener('click', () => {
+                window.FGEUI.closeModal('pendingCatalogAlertModal');
+                switchToAdminTab('tabCatalogs');
+            });
+        }
+
         // Cerrar modales
         document.querySelectorAll('[data-close-modal]').forEach((btn) => {
-            btn.addEventListener('click', () => window.FGEUI.closeModal(btn.getAttribute('data-close-modal')));
+            btn.addEventListener('click', () => {
+                const modalId = btn.getAttribute('data-close-modal');
+                window.FGEUI.closeModal(modalId);
+                if (modalId === 'catalogEditModal' && reopenAlertAfterEdit) {
+                    reopenAlertAfterEdit = false;
+                    if (catalogsState.pendingItems.length > 0) {
+                        openPendingCatalogAlertModal();
+                    }
+                }
+            });
         });
 
         // Exportación global BD en Excel
@@ -673,21 +829,27 @@
             }
         });
 
-        // Acciones sobre elementos de catálogos (pendientes y oficiales)
+        // Acciones sobre elementos de catálogos (pendientes, oficiales y modal de alerta)
         const handleCatalogActionClick = async (e) => {
             const btn = e.target.closest('button[data-cat-act]');
             if (!btn) return;
             const act = btn.getAttribute('data-cat-act');
             const id = btn.getAttribute('data-id');
+            const fromAlert = btn.getAttribute('data-from-alert') === '1';
             if (act === 'approve') {
                 try {
                     await window.FGEDB.approveCatalogItem(id);
+                    newlyArrivedPendingIds.delete(id);
                     window.FGEUI.showToast('Elemento autorizado y adjuntado a la lista oficial.', 'success');
                     await reloadAll();
                 } catch (err) {
                     window.FGEUI.showToast(err.message, 'error');
                 }
             } else if (act === 'edit') {
+                if (fromAlert) {
+                    reopenAlertAfterEdit = true;
+                    window.FGEUI.closeModal('pendingCatalogAlertModal');
+                }
                 openCatalogEditModal(id);
             } else if (act === 'reject') {
                 const it = catalogsState.allItems.find(x => x.id === id);
@@ -695,6 +857,7 @@
                 if (!confirm(`¿Deseas eliminar "${it.value}" de la lista?`)) return;
                 try {
                     await window.FGEDB.rejectCatalogItem(id);
+                    newlyArrivedPendingIds.delete(id);
                     window.FGEUI.showToast('Elemento eliminado de la lista.', 'info');
                     await reloadAll();
                 } catch (err) {
@@ -704,6 +867,10 @@
         };
         document.getElementById('pendingCatalogsList').addEventListener('click', handleCatalogActionClick);
         document.getElementById('catalogItemsContainer').addEventListener('click', handleCatalogActionClick);
+        const pendingAlertList = document.getElementById('pendingAlertList');
+        if (pendingAlertList) {
+            pendingAlertList.addEventListener('click', handleCatalogActionClick);
+        }
 
         document.getElementById('btnConfirmCatalogEdit').addEventListener('click', async () => {
             const id = document.getElementById('catEditId').value;
@@ -712,6 +879,7 @@
             if (!val) return;
             try {
                 const res = await window.FGEDB.approveCatalogItem(id, { editedValue: val, propagateToRecords: prop });
+                newlyArrivedPendingIds.delete(id);
                 window.FGEUI.closeModal('catalogEditModal');
                 window.FGEUI.showToast(
                     res.updatedRecords > 0
@@ -720,6 +888,12 @@
                     'success'
                 );
                 await reloadAll();
+                if (reopenAlertAfterEdit) {
+                    reopenAlertAfterEdit = false;
+                    if (catalogsState.pendingItems.length > 0) {
+                        openPendingCatalogAlertModal();
+                    }
+                }
             } catch (err) {
                 window.FGEUI.showToast(err.message, 'error');
             }

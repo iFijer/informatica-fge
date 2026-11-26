@@ -398,10 +398,11 @@
 
     function renderEntregaBadge(val) {
         const v = normalizeText(val);
+        if (!v) return `<span class="text-muted">—</span>`;
         if (v.includes('DICTAMEN')) return `<span class="badge badge-emerald">${escapeHtml(val)}</span>`;
         if (v.includes('INFORME')) return `<span class="badge badge-blue">${escapeHtml(val)}</span>`;
         if (v.includes('PENDIENTE')) return `<span class="badge badge-amber">${escapeHtml(val)}</span>`;
-        return `<span class="badge badge-cyan">${escapeHtml(val || '—')}</span>`;
+        return `<span class="badge badge-cyan">${escapeHtml(val)}</span>`;
     }
 
     window.addEventListener('DOMContentLoaded', () => {
